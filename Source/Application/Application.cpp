@@ -11,7 +11,6 @@
 #include <imgui.h>
 
 #include <algorithm>
-#include <cmath>
 #include <cstdio>
 #include <filesystem>
 #include <limits>
@@ -57,10 +56,7 @@ struct FUiState
 	bool bOpenLicenses = false;
 };
 
-[[nodiscard]] ImFont* LoadFont(
-	FAssetProvider& AssetProvider,
-	ImGuiIO& IO,
-	const std::string_view VirtualPath)
+[[nodiscard]] ImFont* LoadFont(FAssetProvider& AssetProvider, ImGuiIO& IO, const std::string_view VirtualPath)
 {
 	const std::expected<std::span<const std::byte>, FAssetLoadError> FontData = AssetProvider.Load(VirtualPath);
 	if (!FontData)
@@ -68,6 +64,7 @@ struct FUiState
 		std::println(stderr, "Could not load font '{}': {}", VirtualPath, FontData.error().Message);
 		return nullptr;
 	}
+
 	if (FontData->size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
 	{
 		std::println(stderr, "Font is too large for Dear ImGui: {}", VirtualPath);
@@ -228,14 +225,7 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 		State.bUiCapturesMouse);
 }
 
-void DrawSystemButtonBackground(
-	ImDrawList& DrawList,
-	const float Left,
-	const float Top,
-	const float Width,
-	const float Height,
-	const bool bHovered,
-	const bool bCloseButton)
+void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const float Top, const float Width, const float Height, const bool bHovered, const bool bCloseButton)
 {
 	if (!bHovered)
 	{
@@ -260,6 +250,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 		{ 0.0f, 0.0f },
 		{ Width, Height },
 		State.bFocused ? Theme::Colors::Canvas : Theme::Colors::Surface1);
+
 	DrawList.AddLine(
 		{ 0.0f, Height - 1.0f },
 		{ Width, Height - 1.0f },
@@ -273,6 +264,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 		Height,
 		HoveredRegion == ETitleBarHitRegion::MinimizeButton,
 		false);
+
 	DrawSystemButtonBackground(
 		DrawList,
 		Width - ButtonWidth * 2.0f,
@@ -281,6 +273,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 		Height,
 		HoveredRegion == ETitleBarHitRegion::MaximizeButton,
 		false);
+
 	DrawSystemButtonBackground(
 		DrawList,
 		Width - ButtonWidth,
@@ -294,6 +287,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 	const float LineThickness = std::max(1.0f, Scale);
 	const float MinimizeCenterX = Width - ButtonWidth * 2.5f;
 	const float CenterY = Height * 0.5f;
+
 	DrawList.AddLine(
 		{ MinimizeCenterX - 5.0f * Scale, CenterY + 3.0f * Scale },
 		{ MinimizeCenterX + 5.0f * Scale, CenterY + 3.0f * Scale },
@@ -310,6 +304,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 			0.0f,
 			0,
 			LineThickness);
+
 		DrawList.AddRect(
 			{ MaximizeCenterX - 5.0f * Scale, CenterY - 3.0f * Scale },
 			{ MaximizeCenterX + 3.0f * Scale, CenterY + 5.0f * Scale },
@@ -335,6 +330,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 		{ CloseCenterX + 5.0f * Scale, CenterY + 5.0f * Scale },
 		GlyphColor,
 		LineThickness);
+
 	DrawList.AddLine(
 		{ CloseCenterX + 5.0f * Scale, CenterY - 5.0f * Scale },
 		{ CloseCenterX - 5.0f * Scale, CenterY + 5.0f * Scale },
@@ -351,6 +347,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 
 	ImGui::PushFont(Fonts.Medium, 0.0f);
 	const ImVec2 TextSize = ImGui::CalcTextSize(ApplicationTitle);
+
 	DrawList.AddText(
 		{ (Width - TextSize.x) * 0.5f, (Height - TextSize.y) * 0.5f },
 		State.bFocused ? Theme::Colors::TextPrimary : Theme::Colors::TextMuted,
@@ -419,6 +416,7 @@ void DrawFeatureCard(FUiState& State, const FApplicationFonts& Fonts)
 	{
 		State.bShowDemoWindow = true;
 	}
+
 	ImGui::SameLine();
 	if (ImGui::Button("View licenses"))
 	{
@@ -487,6 +485,7 @@ void DrawBuildProfileCard(const FApplicationFonts& Fonts)
 			{ "Interface", "Dear ImGui docking" },
 			{ "Shipping", "Embedded assets" }
 		};
+
 		for (const auto& Row : Rows)
 		{
 			ImGui::TableNextRow();
@@ -525,6 +524,7 @@ void DrawLicenseModal(FUiState& State, const std::string& RobotoLicense)
 			ImGuiChildFlags_Borders);
 		ImGui::TextUnformatted(RobotoLicense.data(), RobotoLicense.data() + RobotoLicense.size());
 		ImGui::EndChild();
+
 		if (ImGui::Button("Close"))
 		{
 			ImGui::CloseCurrentPopup();
@@ -577,6 +577,7 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 		{ 0.5f, 0.5f });
 	ImGui::Begin("Start");
 	DrawFeatureCard(State, Resources.Fonts);
+
 	if (ImGui::GetContentRegionAvail().x >= 720.0f * InterfaceScale &&
 		ImGui::BeginTable("StarterCards", 2, ImGuiTableFlags_SizingStretchSame))
 	{
@@ -592,6 +593,7 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 		ImGui::Dummy({ 0.0f, 8.0f * InterfaceScale });
 		DrawBuildProfileCard(Resources.Fonts);
 	}
+
 	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
 	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(Theme::Colors::Accent), "●");
 	ImGui::SameLine();

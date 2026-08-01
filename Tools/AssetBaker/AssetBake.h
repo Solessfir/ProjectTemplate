@@ -22,8 +22,5 @@ struct FAsset
 
 [[nodiscard]] std::expected<std::vector<std::string>, FError> ParseManifest(std::string_view ManifestText);
 [[nodiscard]] std::expected<std::string, FError> GenerateSource(std::span<const FAsset> Assets);
-[[nodiscard]] std::expected<void, FError> Bake(
-	const std::filesystem::path& ManifestPath,
-	const std::filesystem::path& AssetRoot,
-	const std::filesystem::path& OutputPath);
+[[nodiscard]] std::expected<void, FError> Bake(const std::filesystem::path& ManifestPath, const std::filesystem::path& AssetRoot, const std::filesystem::path& OutputPath);
 }

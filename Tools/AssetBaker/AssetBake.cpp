@@ -96,9 +96,7 @@ namespace
 	return Escaped;
 }
 
-[[nodiscard]] std::expected<void, FError> WriteFileIfChanged(
-	const std::filesystem::path& OutputPath,
-	const std::string_view Contents)
+[[nodiscard]] std::expected<void, FError> WriteFileIfChanged(const std::filesystem::path& OutputPath, const std::string_view Contents)
 {
 	if (const std::expected<std::string, FError> ExistingContents = ReadTextFile(OutputPath);
 		ExistingContents && *ExistingContents == Contents)
@@ -262,10 +260,7 @@ std::expected<std::string, FError> GenerateSource(const std::span<const FAsset> 
 	return Source.str();
 }
 
-std::expected<void, FError> Bake(
-	const std::filesystem::path& ManifestPath,
-	const std::filesystem::path& AssetRoot,
-	const std::filesystem::path& OutputPath)
+std::expected<void, FError> Bake(const std::filesystem::path& ManifestPath, const std::filesystem::path& AssetRoot, const std::filesystem::path& OutputPath)
 {
 	const std::expected<std::string, FError> ManifestText = ReadTextFile(ManifestPath);
 	if (!ManifestText)

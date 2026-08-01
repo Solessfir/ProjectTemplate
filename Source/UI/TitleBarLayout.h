@@ -43,12 +43,7 @@ struct FTitleBarLayout
 	return static_cast<int>(static_cast<float>(Value) * ContentScale + 0.5f);
 }
 
-[[nodiscard]] constexpr FTitleBarLayout MakeTitleBarLayout(
-	const int WindowWidth,
-	const int WindowHeight,
-	const float ContentScale,
-	const bool bResizable,
-	const bool bMaximized) noexcept
+[[nodiscard]] constexpr FTitleBarLayout MakeTitleBarLayout(const int WindowWidth, const int WindowHeight, const float ContentScale, const bool bResizable, const bool bMaximized) noexcept
 {
 	return {
 		.WindowWidth = WindowWidth,
@@ -61,11 +56,7 @@ struct FTitleBarLayout
 	};
 }
 
-[[nodiscard]] constexpr ETitleBarHitRegion HitTestTitleBar(
-	const FTitleBarLayout& Layout,
-	const int X,
-	const int Y,
-	const bool bUiCapturesMouse) noexcept
+[[nodiscard]] constexpr ETitleBarHitRegion HitTestTitleBar(const FTitleBarLayout& Layout, const int X, const int Y, const bool bUiCapturesMouse) noexcept
 {
 	if (bUiCapturesMouse)
 	{
