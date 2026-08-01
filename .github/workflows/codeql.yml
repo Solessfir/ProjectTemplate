@@ -1,0 +1,84 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  merge_group:
+  schedule:
+    - cron: "41 2 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: Analyze C and C++
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Linux window-system packages
+        shell: bash
+        run: >-
+          sudo apt-get update &&
+          sudo apt-get install -y
+          libgl1-mesa-dev
+          libx11-dev
+          libxrandr-dev
+          libxinerama-dev
+          libxcursor-dev
+          libxi-dev
+          libxkbcommon-dev
+          libwayland-dev
+          wayland-protocols
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        with:
+          languages: c-cpp
+          build-mode: manual
+
+      - name: Set up and generate project
+        shell: bash
+        env:
+          CC: gcc
+          CXX: g++
+        run: |
+          bash ./Setup.sh
+          bash ./GenerateProjectFiles.sh
+
+      - name: Build project
+        shell: bash
+        env:
+          CC: gcc
+          CXX: g++
+        run: >-
+          make
+          --directory=Intermediate/ProjectFiles/gmake
+          --jobs=2
+          config=development
+
+      - name: Analyze project
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        with:
+          category: /language:c-cpp
