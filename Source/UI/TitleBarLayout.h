@@ -59,8 +59,17 @@ struct FTitleBarLayout
 	};
 }
 
-[[nodiscard]] constexpr ETitleBarHitRegion HitTestTitleBar(const FTitleBarLayout& Layout, const int X, const int Y) noexcept
+[[nodiscard]] constexpr ETitleBarHitRegion HitTestTitleBar(
+	const FTitleBarLayout& Layout,
+	const int X,
+	const int Y,
+	const bool bUiCapturesMouse) noexcept
 {
+	if (bUiCapturesMouse)
+	{
+		return ETitleBarHitRegion::Client;
+	}
+
 	if (X < 0 || Y < 0 || X >= Layout.WindowWidth || Y >= Layout.WindowHeight)
 	{
 		return ETitleBarHitRegion::Client;

@@ -34,6 +34,7 @@ struct FWindowState
 	double CursorY = 0.0;
 	bool bFocused = true;
 	bool bCursorInside = false;
+	bool bUiCapturesMouse = false;
 	bool bWayland = false;
 };
 
@@ -206,11 +207,11 @@ void CursorEnterCallback(GLFWwindow* const Window, const int bEntered)
 
 int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 {
-	// Native hit testing must not query ImGui or make synchronous window-system calls.
+	// Native hit testing may run while GLFW dispatches events, so it uses capture state cached by the last ImGui frame.
 	const FWindowState* const State = GetWindowState(Window);
 	return State == nullptr
 		? GLFW_HIT_TEST_CLIENT
-		: ToGlfwHitTest(HitTestTitleBar(State->TitleBar, X, Y));
+		: ToGlfwHitTest(HitTestTitleBar(State->TitleBar, X, Y, State->bUiCapturesMouse));
 }
 
 [[nodiscard]] ETitleBarHitRegion GetHoveredRegion(const FWindowState& State)
@@ -223,7 +224,8 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 	return HitTestTitleBar(
 		State.TitleBar,
 		static_cast<int>(State.CursorX),
-		static_cast<int>(State.CursorY));
+		static_cast<int>(State.CursorY),
+		State.bUiCapturesMouse);
 }
 
 void DrawSystemButtonBackground(
@@ -738,6 +740,7 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		WindowState.bUiCapturesMouse = IO.WantCaptureMouse;
 
 		DrawTitleBar(WindowState, Resources->Fonts);
 		DrawWorkspace(WindowState.TitleBar, *Resources, UiState);

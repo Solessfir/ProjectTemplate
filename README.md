@@ -160,6 +160,8 @@ The GLFW window remains decorated, but its native title bar is disabled with `GL
 
 System controls are drawn with ImGui primitives because GLFW and the window system own their clicks. This preserves native behavior, including Windows 11 Snap Layout. Do not replace them with `ImGui::Button` without also returning `GLFW_HIT_TEST_CLIENT` for those rectangles.
 
+ImGui input capture takes priority when a floating window, popup, or modal overlaps the custom title bar. The hit-test callback reads capture state cached by the previous ImGui frame and returns client space, allowing the ImGui surface to receive clicks and dragging instead of moving the native window.
+
 Dear ImGui multi-viewport support is intentionally disabled. Each detached viewport would need its own custom-title-bar state, drawing, and hit-test callback. Docking inside the main window is enabled.
 
 ## Deliberately not included
