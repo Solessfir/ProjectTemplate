@@ -1,0 +1,2 @@
+# Paths are relative to this Assets directory and use forward slashes.
+# Debug and Development load them loose. Shipping embeds them into the executable.

@@ -1,8 +1,19 @@
 local Root = path.getabsolute(_MAIN_SCRIPT_DIR)
 local External = Root .. "/External"
+local Assets = Root .. "/Assets"
+local AssetManifest = Assets .. "/EmbeddedAssets.txt"
+local GeneratedAssets = Root .. "/Intermediate/Generated/Assets"
+local GeneratedAssetSource = GeneratedAssets .. "/EmbeddedAssets.cpp"
 local GeneratedGlfw = Root .. "/Intermediate/Generated/GLFW"
 local ProjectFiles = Root .. "/Intermediate/ProjectFiles/" .. (_ACTION or "NoAction")
 local OutputDirectory = "%{cfg.system}/%{cfg.architecture}/%{cfg.buildcfg}"
+local AssetInputs = os.matchfiles(Assets .. "/**")
+
+table.insert(AssetInputs, AssetManifest)
+table.insert(AssetInputs, Root .. "/Source/Assets/AssetPath.h")
+for _, AssetBakerInput in ipairs(os.matchfiles(Root .. "/Tools/AssetBaker/**")) do
+    table.insert(AssetInputs, AssetBakerInput)
+end
 
 project "GLFW"
     location(ProjectFiles)
@@ -110,6 +121,25 @@ project "ImGui"
         External .. "/imgui"
     }
 
+project "AssetBaker"
+    location(ProjectFiles)
+    kind "ConsoleApp"
+    targetdir(Root .. "/Binaries/" .. OutputDirectory)
+    objdir(Root .. "/Intermediate/Build/" .. OutputDirectory .. "/%{prj.name}")
+    warnings "Extra"
+    fatalwarnings "All"
+
+    files {
+        Root .. "/Source/Assets/AssetPath.h",
+        Root .. "/Tools/AssetBaker/**.cpp",
+        Root .. "/Tools/AssetBaker/**.h"
+    }
+
+    includedirs {
+        Root .. "/Source",
+        Root .. "/Tools/AssetBaker"
+    }
+
 project "StarterApp"
     location(ProjectFiles)
     kind "WindowedApp"
@@ -121,7 +151,8 @@ project "StarterApp"
 
     files {
         Root .. "/Source/**.cpp",
-        Root .. "/Source/**.h"
+        Root .. "/Source/**.h",
+        AssetManifest
     }
 
     includedirs {
@@ -139,6 +170,34 @@ project "StarterApp"
     filter "system:linux"
         links { "GL", "dl", "m", "pthread", "rt" }
 
+    filter { "configurations:Shipping" }
+        defines { "PROJECTTEMPLATE_EMBEDDED_ASSETS=1" }
+        dependson { "AssetBaker" }
+
+    filter { "system:windows", "configurations:Shipping", "files:**/EmbeddedAssets.txt" }
+        buildmessage "Embedding application assets"
+        buildcommands {
+            '"' .. Root .. '/Binaries/' .. OutputDirectory .. '/AssetBaker.exe"' ..
+            ' --manifest "' .. AssetManifest .. '"' ..
+            ' --asset-root "' .. Assets .. '"' ..
+            ' --output "' .. GeneratedAssetSource .. '"'
+        }
+        buildinputs(AssetInputs)
+        buildoutputs { GeneratedAssetSource }
+        compilebuildoutputs "On"
+
+    filter { "system:linux", "configurations:Shipping", "files:**/EmbeddedAssets.txt" }
+        buildmessage "Embedding application assets"
+        buildcommands {
+            '"' .. Root .. '/Binaries/' .. OutputDirectory .. '/AssetBaker"' ..
+            ' --manifest "' .. AssetManifest .. '"' ..
+            ' --asset-root "' .. Assets .. '"' ..
+            ' --output "' .. GeneratedAssetSource .. '"'
+        }
+        buildinputs(AssetInputs)
+        buildoutputs { GeneratedAssetSource }
+        compilebuildoutputs "On"
+
     filter {}
 
 project "StarterTests"
@@ -151,11 +210,17 @@ project "StarterTests"
     fatalwarnings "All"
 
     files {
+        Root .. "/Source/Assets/AssetPath.h",
+        Root .. "/Source/Assets/AssetProvider.cpp",
+        Root .. "/Source/Assets/AssetProvider.h",
+        Root .. "/Tools/AssetBaker/AssetBake.cpp",
+        Root .. "/Tools/AssetBaker/AssetBake.h",
         Root .. "/Source/UI/TitleBarLayout.h",
         Root .. "/Tests/**.cpp"
     }
 
     includedirs {
         Root .. "/Source",
+        Root .. "/Tools/AssetBaker",
         External .. "/doctest"
     }

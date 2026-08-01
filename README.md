@@ -11,6 +11,8 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - [Herta GLFW fork](https://github.com/Solessfir/glfw) with custom title bars on Win32, X11, and Wayland
 - Dear ImGui docking branch
 - OpenGL 3.3 presentation backend
+- Configuration-aware loose and embedded asset provider
+- C++23 asset baker for single-executable Shipping builds
 - doctest unit tests
 - DPI-aware custom title bar with native move, resize, system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
 - Windows and Linux GitHub Actions builds
@@ -77,6 +79,7 @@ For backend-specific diagnostics, pass `--platform=x11` or `--platform=wayland`.
 ProjectTemplate/
 |-- .github/                 # CI, CodeQL, dependency updates
 |-- Build/Premake/           # Workspace project and toolchain policy
+|-- Assets/                  # Loose source assets and embedding manifest
 |-- Config/                  # Pinned downloaded-tool lock
 |-- External/                # Pinned third-party sources and tools
 |   `-- Premake/             # Ignored host binaries installed by Setup
@@ -86,13 +89,22 @@ ProjectTemplate/
 |   |-- UI/                  # Pure title-bar layout and hit testing
 |   `-- Main.cpp
 |-- Tests/
+|-- Tools/AssetBaker/        # Shipping asset code generator
 |-- Cleanup.bat/.sh
 |-- GenerateProjectFiles.bat/.sh
 |-- Setup.bat/.sh
 `-- premake5.lua
 ```
 
-The app is one executable target. `StarterTests` is the only second-party target. Split reusable code into a static library only after the derived application has a real second consumer.
+The runtime remains one executable target. `AssetBaker` is a dependency-free host tool used only when producing embedded Shipping assets. Split reusable runtime code into a static library only after the derived application has a real second consumer.
+
+## Assets
+
+Debug and Development load loose files from `Assets`. Shipping reads `Assets/EmbeddedAssets.txt`, generates one source file under `Intermediate`, and compiles the selected binary data into `StarterApp`.
+
+List one forward-slash path per manifest line, relative to `Assets`. Blank lines and lines beginning with `#` are ignored. Regenerate project files after adding or removing manifest entries so the native build system tracks the complete input set.
+
+Generated asset source is never committed. Application code accesses loose and embedded data through the same provider, and normal builds never download assets or tools.
 
 ## Custom title bar
 
@@ -118,7 +130,7 @@ Store future source icons under `Resources/Icons` as SVG. Rasterize and cache th
 
 The starter uses only OpenGL 1.1 entry points directly; Dear ImGui owns its private OpenGL 3 loader. Add a pinned generated glad2 loader before writing custom modern OpenGL rendering. Do not call or include ImGui's private loader from application code.
 
-Also omitted until needed: spdlog, serialization, task systems, native file dialogs, audio, networking, scripting, and resource embedding.
+Also omitted until needed: spdlog, serialization, task systems, native file dialogs, audio, networking, and scripting.
 
 ## Starting a real project
 
