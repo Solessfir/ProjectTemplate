@@ -1,5 +1,6 @@
 # Paths are relative to this Assets directory and use forward slashes.
 # Debug and Development load them loose. Shipping embeds them into the executable.
+# Roboto is redistributed in Shipping, so keep its OFL text available through View licenses.
 Fonts/Roboto/OFL.txt
 Fonts/Roboto/Roboto-Medium.ttf
 Fonts/Roboto/Roboto-Regular.ttf

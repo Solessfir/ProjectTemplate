@@ -94,8 +94,8 @@ struct FUiState
 		return std::nullopt;
 	}
 
-	const std::expected<std::span<const std::byte>, FAssetLoadError> LicenseData =
-		AssetProvider.Load("Fonts/Roboto/OFL.txt");
+	// Roboto is redistributed with the app, so its OFL text must remain available through the license viewer.
+	const std::expected<std::span<const std::byte>, FAssetLoadError> LicenseData = AssetProvider.Load("Fonts/Roboto/OFL.txt");
 	if (!LicenseData)
 	{
 		std::println(stderr, "Could not load Roboto license: {}", LicenseData.error().Message);
