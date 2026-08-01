@@ -171,6 +171,24 @@ Windows builds compile `Assets/Application/ApplicationIcon.rc` through Premake. 
 
 Linux application icons are installed with desktop packaging rather than embedded in the executable. Use the SVG when adding a `.desktop` entry or package for the derived application.
 
+## Extending the application
+
+Start with `DrawWorkspace` in `Source/Application/Application.cpp`. It is the top-level per-frame UI function and currently composes the starter cards, docking space, demo window, and license modal. Replace those calls with the first real application surface.
+
+Use the surrounding files according to the boundary being changed:
+
+- `RunApplication` in `Source/Application/Application.cpp` owns GLFW, OpenGL, ImGui, assets, and the main loop. Change it for application lifetime or renderer integration, not ordinary feature UI.
+- `Source/UI/ApplicationTheme.h/.cpp` owns shared sizing and color tokens.
+- `Source/UI/TitleBarLayout.h` and `Tests/TitleBarTests.cpp` own native title-bar hit regions. Keep drawing and hit testing synchronized.
+- `Source/Main.cpp` is only the process entry point and command-line parsing.
+- `Assets` and `Assets/EmbeddedAssets.txt` contain runtime data. Add assets through `FAssetProvider` so loose and Shipping builds follow the same code path.
+- `Build/Premake/Projects.lua` owns source targets, platform libraries, and build settings. Pin new source dependencies under `External` and expose them through an application-owned boundary.
+- `Tests` contains doctest coverage for non-rendering behavior and regressions.
+
+For a small first feature, add its state and draw function near `DrawWorkspace`. Once it becomes independently testable or has a distinct lifetime, move it into a focused `.h/.cpp` pair under `Source`. The `StarterApp` project includes `Source/**`, but project files must be regenerated after adding or moving source files.
+
+Do not build application features inside `External`, ImGui backends, or the GLFW fork. Those directories are pinned dependencies and should remain replaceable.
+
 ## Deliberately not included
 
 ### Math
