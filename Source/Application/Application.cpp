@@ -1,6 +1,7 @@
 #include "Application/Application.h"
 
 #include "Assets/AssetProvider.h"
+#include "UI/ApplicationTheme.h"
 #include "UI/TitleBarLayout.h"
 
 #include <GLFW/glfw3.h>
@@ -16,6 +17,7 @@
 #include <limits>
 #include <optional>
 #include <print>
+#include <string>
 #include <system_error>
 
 namespace ProjectTemplate
@@ -39,6 +41,19 @@ struct FApplicationFonts
 {
 	ImFont* Regular = nullptr;
 	ImFont* Medium = nullptr;
+};
+
+struct FApplicationResources
+{
+	FApplicationFonts Fonts;
+	std::string RobotoLicense;
+};
+
+struct FUiState
+{
+	char ApplicationName[64] = "Native App";
+	bool bShowDemoWindow = false;
+	bool bOpenLicenses = false;
 };
 
 [[nodiscard]] ImFont* LoadFont(
@@ -68,18 +83,32 @@ struct FApplicationFonts
 		&FontConfig);
 }
 
-[[nodiscard]] std::optional<FApplicationFonts> LoadApplicationFonts(FAssetProvider& AssetProvider, ImGuiIO& IO)
+[[nodiscard]] std::optional<FApplicationResources> LoadApplicationResources(FAssetProvider& AssetProvider, ImGuiIO& IO)
 {
-	FApplicationFonts Fonts;
-	Fonts.Regular = LoadFont(AssetProvider, IO, "Fonts/Roboto/Roboto-Regular.ttf");
-	Fonts.Medium = LoadFont(AssetProvider, IO, "Fonts/Roboto/Roboto-Medium.ttf");
-	if (Fonts.Regular == nullptr || Fonts.Medium == nullptr)
+	FApplicationResources Resources;
+	Resources.Fonts.Regular = LoadFont(AssetProvider, IO, "Fonts/Roboto/Roboto-Regular.ttf");
+	Resources.Fonts.Medium = LoadFont(AssetProvider, IO, "Fonts/Roboto/Roboto-Medium.ttf");
+	if (Resources.Fonts.Regular == nullptr || Resources.Fonts.Medium == nullptr)
 	{
 		return std::nullopt;
 	}
 
-	IO.FontDefault = Fonts.Regular;
-	return Fonts;
+	const std::expected<std::span<const std::byte>, FAssetLoadError> LicenseData =
+		AssetProvider.Load("Fonts/Roboto/OFL.txt");
+	if (!LicenseData)
+	{
+		std::println(stderr, "Could not load Roboto license: {}", LicenseData.error().Message);
+		return std::nullopt;
+	}
+
+	Resources.RobotoLicense.reserve(LicenseData->size());
+	for (const std::byte Byte : *LicenseData)
+	{
+		Resources.RobotoLicense.push_back(static_cast<char>(std::to_integer<unsigned char>(Byte)));
+	}
+
+	IO.FontDefault = Resources.Fonts.Regular;
+	return Resources;
 }
 
 void GlfwErrorCallback(const int Error, const char* const Description)
@@ -211,11 +240,11 @@ void DrawSystemButtonBackground(
 		return;
 	}
 
-	const ImU32 Color = bCloseButton ? IM_COL32(196, 43, 28, 255) : IM_COL32(65, 68, 77, 255);
+	const ImU32 Color = bCloseButton ? Theme::Colors::CloseHover : Theme::Colors::SurfaceHover;
 	DrawList.AddRectFilled({ Left, Top }, { Left + Width, Top + Height }, Color);
 }
 
-void DrawTitleBar(const FWindowState& State)
+void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 {
 	const FTitleBarLayout& Layout = State.TitleBar;
 	ImDrawList& DrawList = *ImGui::GetBackgroundDrawList();
@@ -228,7 +257,11 @@ void DrawTitleBar(const FWindowState& State)
 	DrawList.AddRectFilled(
 		{ 0.0f, 0.0f },
 		{ Width, Height },
-		State.bFocused ? IM_COL32(28, 30, 36, 255) : IM_COL32(38, 40, 46, 255));
+		State.bFocused ? Theme::Colors::Canvas : Theme::Colors::Surface1);
+	DrawList.AddLine(
+		{ 0.0f, Height - 1.0f },
+		{ Width, Height - 1.0f },
+		Theme::Colors::BorderSoft);
 
 	DrawSystemButtonBackground(
 		DrawList,
@@ -255,7 +288,7 @@ void DrawTitleBar(const FWindowState& State)
 		HoveredRegion == ETitleBarHitRegion::CloseButton,
 		true);
 
-	constexpr ImU32 GlyphColor = IM_COL32(230, 232, 236, 255);
+	constexpr ImU32 GlyphColor = Theme::Colors::TextPrimary;
 	const float LineThickness = std::max(1.0f, Scale);
 	const float MinimizeCenterX = Width - ButtonWidth * 2.5f;
 	const float CenterY = Height * 0.5f;
@@ -309,19 +342,195 @@ void DrawTitleBar(const FWindowState& State)
 	const float IconCenter = Height * 0.5f;
 	if (HoveredRegion == ETitleBarHitRegion::SystemMenu)
 	{
-		DrawList.AddRectFilled({ 0.0f, 0.0f }, { Height, Height }, IM_COL32(65, 68, 77, 255));
+		DrawList.AddRectFilled({ 0.0f, 0.0f }, { Height, Height }, Theme::Colors::SurfaceHover);
 	}
-	DrawList.AddCircleFilled({ IconCenter, IconCenter }, 8.0f * Scale, IM_COL32(118, 91, 255, 255));
-	DrawList.AddCircle({ IconCenter, IconCenter }, 4.0f * Scale, IM_COL32(232, 228, 255, 255), 0, LineThickness);
+	DrawList.AddCircleFilled({ IconCenter, IconCenter }, 8.0f * Scale, Theme::Colors::Accent);
+	DrawList.AddCircle({ IconCenter, IconCenter }, 4.0f * Scale, Theme::Colors::TextPrimary, 0, LineThickness);
 
+	ImGui::PushFont(Fonts.Medium, 0.0f);
 	const ImVec2 TextSize = ImGui::CalcTextSize(ApplicationTitle);
 	DrawList.AddText(
 		{ (Width - TextSize.x) * 0.5f, (Height - TextSize.y) * 0.5f },
-		State.bFocused ? IM_COL32(236, 237, 240, 255) : IM_COL32(175, 177, 184, 255),
+		State.bFocused ? Theme::Colors::TextPrimary : Theme::Colors::TextMuted,
 		ApplicationTitle);
+	ImGui::PopFont();
 }
 
-void DrawWorkspace(const FTitleBarLayout& Layout, bool& bShowDemoWindow)
+[[nodiscard]] bool DrawPrimaryButton(const char* const Label, const FApplicationFonts& Fonts)
+{
+	ImGui::PushFont(Fonts.Medium, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 100.0f);
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
+	ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(255, 255, 255, 255));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(232, 232, 232, 255));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(210, 210, 210, 255));
+	const bool bPressed = ImGui::Button(Label);
+	ImGui::PopStyleColor(4);
+	ImGui::PopStyleVar();
+	ImGui::PopFont();
+	return bPressed;
+}
+
+void DrawFeatureCard(FUiState& State, const FApplicationFonts& Fonts)
+{
+	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 16.0f * InterfaceScale);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 24.0f * InterfaceScale, 22.0f * InterfaceScale });
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, Theme::Colors::GradientViolet);
+	ImGui::BeginChild(
+		"FeatureCard",
+		{ 0.0f, 192.0f * InterfaceScale },
+		ImGuiChildFlags_AlwaysUseWindowPadding,
+		ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+	ImDrawList& DrawList = *ImGui::GetWindowDrawList();
+	const ImVec2 CardMin = ImGui::GetWindowPos();
+	const ImVec2 CardSize = ImGui::GetWindowSize();
+	const ImVec2 CardMax = { CardMin.x + CardSize.x, CardMin.y + CardSize.y };
+	DrawList.PushClipRect(CardMin, CardMax, true);
+	DrawList.AddCircleFilled(
+		{ CardMax.x - 120.0f * InterfaceScale, CardMin.y + 90.0f * InterfaceScale },
+		110.0f * InterfaceScale,
+		Theme::Colors::GradientMagenta,
+		64);
+	DrawList.AddCircleFilled(
+		{ CardMin.x + 110.0f * InterfaceScale, CardMax.y + 110.0f * InterfaceScale },
+		140.0f * InterfaceScale,
+		Theme::Colors::GradientCoral,
+		64);
+	DrawList.PopClipRect();
+
+	ImGui::PushFont(Fonts.Medium, 13.0f);
+	ImGui::TextUnformatted("PROJECTTEMPLATE / NATIVE C++23");
+	ImGui::PopFont();
+	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
+	ImGui::PushFont(Fonts.Medium, 28.0f);
+	ImGui::TextUnformatted("Build something native.");
+	ImGui::PopFont();
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(242, 238, 255, 230));
+	ImGui::TextWrapped("A focused Windows and Linux starting point with modern C++, native window behavior, and a UI ready to shape.");
+	ImGui::PopStyleColor();
+	ImGui::Dummy({ 0.0f, 8.0f * InterfaceScale });
+
+	if (DrawPrimaryButton("Explore components", Fonts))
+	{
+		State.bShowDemoWindow = true;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("View licenses"))
+	{
+		State.bOpenLicenses = true;
+	}
+
+	ImGui::EndChild();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar(2);
+}
+
+void DrawProjectCard(FUiState& State, const FApplicationFonts& Fonts)
+{
+	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 10.0f * InterfaceScale);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 16.0f * InterfaceScale, 16.0f * InterfaceScale });
+	ImGui::BeginChild(
+		"ProjectCard",
+		{ 0.0f, 180.0f * InterfaceScale },
+		ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+
+	ImGui::PushFont(Fonts.Medium, 16.0f);
+	ImGui::TextUnformatted("Template identity");
+	ImGui::PopFont();
+	ImGui::PushStyleColor(ImGuiCol_Text, Theme::Colors::TextSecondary);
+	ImGui::TextWrapped("Give the derived application a working name before replacing the template identifiers.");
+	ImGui::PopStyleColor();
+	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
+	ImGui::SetNextItemWidth(-1.0f);
+	ImGui::InputTextWithHint("##ApplicationName", "Application name", State.ApplicationName, sizeof(State.ApplicationName));
+	if (ImGui::Button("Copy name"))
+	{
+		ImGui::SetClipboardText(State.ApplicationName);
+	}
+	ImGui::SameLine();
+	ImGui::TextDisabled("Ready for README replacement");
+
+	ImGui::EndChild();
+	ImGui::PopStyleVar(2);
+}
+
+void DrawBuildProfileCard(const FApplicationFonts& Fonts)
+{
+	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 10.0f * InterfaceScale);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 16.0f * InterfaceScale, 16.0f * InterfaceScale });
+	ImGui::BeginChild(
+		"BuildProfileCard",
+		{ 0.0f, 180.0f * InterfaceScale },
+		ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+
+	ImGui::PushFont(Fonts.Medium, 16.0f);
+	ImGui::TextUnformatted("Build profile");
+	ImGui::PopFont();
+	ImGui::PushStyleColor(ImGuiCol_Text, Theme::Colors::TextSecondary);
+	ImGui::TextWrapped("Production-shaped defaults without framework weight.");
+	ImGui::PopStyleColor();
+	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
+
+	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, { 0.0f, 3.0f * InterfaceScale });
+	if (ImGui::BeginTable("BuildProfile", 2, ImGuiTableFlags_SizingStretchProp))
+	{
+		constexpr const char* Rows[][2] = {
+			{ "Language", "C++23" },
+			{ "Window", "GLFW native title bar" },
+			{ "Interface", "Dear ImGui docking" },
+			{ "Shipping", "Embedded assets" }
+		};
+		for (const auto& Row : Rows)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextDisabled("%s", Row[0]);
+			ImGui::TableNextColumn();
+			ImGui::TextWrapped("%s", Row[1]);
+		}
+		ImGui::EndTable();
+	}
+	ImGui::PopStyleVar();
+
+	ImGui::EndChild();
+	ImGui::PopStyleVar(2);
+}
+
+void DrawLicenseModal(FUiState& State, const std::string& RobotoLicense)
+{
+	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	if (State.bOpenLicenses)
+	{
+		ImGui::OpenPopup("Open-source licenses");
+		State.bOpenLicenses = false;
+	}
+
+	ImGui::SetNextWindowSize({ 720.0f * InterfaceScale, 520.0f * InterfaceScale }, ImGuiCond_Appearing);
+	if (ImGui::BeginPopupModal("Open-source licenses", nullptr, ImGuiWindowFlags_NoSavedSettings))
+	{
+		ImGui::TextUnformatted("Roboto");
+		ImGui::SameLine();
+		ImGui::TextDisabled("SIL Open Font License 1.1");
+		ImGui::Separator();
+		ImGui::BeginChild(
+			"RobotoLicense",
+			{ 0.0f, -(ImGui::GetFrameHeightWithSpacing() + 8.0f * InterfaceScale) },
+			ImGuiChildFlags_Borders);
+		ImGui::TextUnformatted(RobotoLicense.data(), RobotoLicense.data() + RobotoLicense.size());
+		ImGui::EndChild();
+		if (ImGui::Button("Close"))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
+
+void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& Resources, FUiState& State)
 {
 	const ImGuiIO& IO = ImGui::GetIO();
 	const float TitleBarHeight = static_cast<float>(Layout.TitleBarHeight);
@@ -345,23 +554,54 @@ void DrawWorkspace(const FTitleBarLayout& Layout, bool& bShowDemoWindow)
 
 	ImGui::Begin("WorkspaceHost", nullptr, HostFlags);
 	ImGui::PopStyleVar(3);
+	const ImGuiID MainDockspaceId = ImGui::GetID("MainDockspace");
 	ImGui::DockSpace(
-		ImGui::GetID("MainDockspace"),
+		MainDockspaceId,
 		{ 0.0f, 0.0f },
 		ImGuiDockNodeFlags_PassthruCentralNode);
 	ImGui::End();
 
-	ImGui::Begin("Welcome");
-	ImGui::TextUnformatted("C++23 native application starter");
-	ImGui::Separator();
-	ImGui::TextUnformatted("GLFW custom title bar + Dear ImGui docking + OpenGL 3.3");
-	ImGui::Checkbox("Show Dear ImGui demo", &bShowDemoWindow);
+	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	const ImVec2 WelcomeSize = {
+		std::min(880.0f * InterfaceScale, std::max(320.0f, WorkspaceSize.x - 64.0f * InterfaceScale)),
+		std::min(590.0f * InterfaceScale, std::max(300.0f, WorkspaceSize.y - 64.0f * InterfaceScale))
+	};
+	ImGui::SetNextWindowSize(WelcomeSize, ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowDockID(MainDockspaceId, ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(
+		{ WorkspaceSize.x * 0.5f, TitleBarHeight + WorkspaceSize.y * 0.5f },
+		ImGuiCond_FirstUseEver,
+		{ 0.5f, 0.5f });
+	ImGui::Begin("Start");
+	DrawFeatureCard(State, Resources.Fonts);
+	if (ImGui::GetContentRegionAvail().x >= 720.0f * InterfaceScale &&
+		ImGui::BeginTable("StarterCards", 2, ImGuiTableFlags_SizingStretchSame))
+	{
+		ImGui::TableNextColumn();
+		DrawProjectCard(State, Resources.Fonts);
+		ImGui::TableNextColumn();
+		DrawBuildProfileCard(Resources.Fonts);
+		ImGui::EndTable();
+	}
+	else
+	{
+		DrawProjectCard(State, Resources.Fonts);
+		ImGui::Dummy({ 0.0f, 8.0f * InterfaceScale });
+		DrawBuildProfileCard(Resources.Fonts);
+	}
+	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
+	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(Theme::Colors::Accent), "●");
+	ImGui::SameLine();
+	ImGui::TextUnformatted("Windows and Linux workspace ready");
+	ImGui::SameLine();
+	ImGui::TextDisabled("  |  Roboto  |  OpenGL 3.3");
 	ImGui::End();
 
-	if (bShowDemoWindow)
+	if (State.bShowDemoWindow)
 	{
-		ImGui::ShowDemoWindow(&bShowDemoWindow);
+		ImGui::ShowDemoWindow(&State.bShowDemoWindow);
 	}
+	DrawLicenseModal(State, Resources.RobotoLicense);
 }
 }
 
@@ -443,9 +683,10 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 	IO.ConfigDpiScaleFonts = true;
 	IO.IniFilename = "Saved/ImGui.ini";
 	IO.LogFilename = "Saved/ImGuiLog.txt";
-	ImGui::GetStyle().FontSizeBase = 15.0f;
-	const std::optional<FApplicationFonts> Fonts = LoadApplicationFonts(AssetProvider, IO);
-	if (!Fonts)
+	ImGui::StyleColorsDark();
+	Theme::ApplyApplicationTheme(ImGui::GetStyle());
+	const std::optional<FApplicationResources> Resources = LoadApplicationResources(AssetProvider, IO);
+	if (!Resources)
 	{
 		ImGui::DestroyContext();
 		glfwDestroyWindow(Window);
@@ -453,7 +694,6 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 		return 1;
 	}
 
-	ImGui::StyleColorsDark();
 	const ImGuiStyle BaseStyle = ImGui::GetStyle();
 
 	std::error_code DirectoryError;
@@ -474,7 +714,7 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 		return 1;
 	}
 
-	bool bShowDemoWindow = false;
+	FUiState UiState;
 	float PreviousContentScale = 0.0f;
 	int FrameCount = 0;
 	while (glfwWindowShouldClose(Window) == GLFW_FALSE)
@@ -499,15 +739,15 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		DrawTitleBar(WindowState);
-		DrawWorkspace(WindowState.TitleBar, bShowDemoWindow);
+		DrawTitleBar(WindowState, Resources->Fonts);
+		DrawWorkspace(WindowState.TitleBar, *Resources, UiState);
 
 		ImGui::Render();
 		int FramebufferWidth = 0;
 		int FramebufferHeight = 0;
 		glfwGetFramebufferSize(Window, &FramebufferWidth, &FramebufferHeight);
 		glViewport(0, 0, FramebufferWidth, FramebufferHeight);
-		glClearColor(0.07f, 0.075f, 0.09f, 1.0f);
+		glClearColor(0.035f, 0.035f, 0.035f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		glfwSwapBuffers(Window);

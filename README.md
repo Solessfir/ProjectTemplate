@@ -14,6 +14,7 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - Configuration-aware loose and embedded asset provider
 - C++23 asset baker for single-executable Shipping builds
 - Roboto Regular and Medium loaded from loose or embedded assets
+- Framer-inspired dark desktop theme with centralized ImGui tokens
 - doctest unit tests
 - DPI-aware custom title bar with native move, resize, system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
 - Windows and Linux GitHub Actions builds
