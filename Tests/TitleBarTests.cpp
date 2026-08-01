@@ -18,7 +18,7 @@ TEST_CASE("Wayland title bars remain in logical coordinates")
 TEST_CASE("Title bar scales its native hit regions")
 {
 	constexpr auto Layout = MakeTitleBarLayout(1200, 800, 1.5f, true, false);
-	static_assert(Layout.TitleBarHeight == 60);
+	static_assert(Layout.TitleBarHeight == 54);
 	static_assert(Layout.ButtonWidth == 69);
 	static_assert(Layout.ResizeBorder == 9);
 

@@ -2,6 +2,8 @@
 
 namespace ProjectTemplate
 {
+inline constexpr int DefaultTitleBarHeight = 36;
+
 enum class ETitleBarHitRegion
 {
 	Client,
@@ -24,7 +26,7 @@ struct FTitleBarLayout
 {
 	int WindowWidth = 0;
 	int WindowHeight = 0;
-	int TitleBarHeight = 40;
+	int TitleBarHeight = DefaultTitleBarHeight;
 	int ButtonWidth = 46;
 	int ResizeBorder = 6;
 	bool bResizable = true;
@@ -51,7 +53,7 @@ struct FTitleBarLayout
 	return {
 		.WindowWidth = WindowWidth,
 		.WindowHeight = WindowHeight,
-		.TitleBarHeight = ScaleTitleBarMetric(40, ContentScale),
+		.TitleBarHeight = ScaleTitleBarMetric(DefaultTitleBarHeight, ContentScale),
 		.ButtonWidth = ScaleTitleBarMetric(46, ContentScale),
 		.ResizeBorder = ScaleTitleBarMetric(6, ContentScale),
 		.bResizable = bResizable,

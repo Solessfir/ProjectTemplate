@@ -126,7 +126,7 @@ void UpdateTitleBarScale(FWindowState& State, const float ContentScale)
 {
 	// Wayland window and cursor coordinates are already logical units.
 	State.UiScale = ResolveTitleBarUiScale(State.bWayland, ContentScale);
-	State.TitleBar.TitleBarHeight = ScaleTitleBarMetric(40, State.UiScale);
+	State.TitleBar.TitleBarHeight = ScaleTitleBarMetric(DefaultTitleBarHeight, State.UiScale);
 	State.TitleBar.ButtonWidth = ScaleTitleBarMetric(46, State.UiScale);
 	State.TitleBar.ResizeBorder = ScaleTitleBarMetric(6, State.UiScale);
 }

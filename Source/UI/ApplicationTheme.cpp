@@ -27,7 +27,7 @@ void ApplyApplicationTheme(ImGuiStyle& Style)
 	Style.ChildBorderSize = 1.0f;
 	Style.PopupRounding = 8.0f;
 	Style.PopupBorderSize = 1.0f;
-	Style.FramePadding = { 12.0f, 4.0f };
+	Style.FramePadding = { 12.0f, 8.0f };
 	Style.FrameRounding = 6.0f;
 	Style.FrameBorderSize = 1.0f;
 	Style.ItemSpacing = { 8.0f, 8.0f };
@@ -88,7 +88,7 @@ void ApplyApplicationTheme(ImGuiStyle& Style)
 	Palette[ImGuiCol_TabDimmed] = ToFloatColor(Colors::Canvas);
 	Palette[ImGuiCol_TabDimmedSelected] = ToFloatColor(Colors::Surface1);
 	Palette[ImGuiCol_TabDimmedSelectedOverline] = ToFloatColor(Colors::Border);
-	Palette[ImGuiCol_DockingPreview] = WithAlpha(Colors::Accent, 0.35f);
+	Palette[ImGuiCol_DockingPreview] = WithAlpha(Colors::TextPrimary, 50.0f / 255.0f);
 	Palette[ImGuiCol_DockingEmptyBg] = ToFloatColor(Colors::Surface0);
 	Palette[ImGuiCol_PlotLines] = ToFloatColor(Colors::TextMuted);
 	Palette[ImGuiCol_PlotLinesHovered] = ToFloatColor(Colors::AccentHover);
