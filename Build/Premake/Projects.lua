@@ -166,6 +166,10 @@ project "StarterApp"
     filter "system:windows"
         entrypoint "mainCRTStartup"
         links { "gdi32", "opengl32", "shell32" }
+        files {
+            Assets .. "/Application/ApplicationIcon.ico",
+            Assets .. "/Application/ApplicationIcon.rc"
+        }
 
     filter "system:linux"
         links { "GL", "dl", "m", "pthread", "rt" }

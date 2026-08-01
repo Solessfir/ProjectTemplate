@@ -14,6 +14,7 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - Configuration-aware loose and embedded asset provider
 - C++23 asset baker for single-executable Shipping builds
 - Roboto Regular and Medium loaded from loose or embedded assets
+- Replaceable application icon embedded into Windows builds
 - Framer-inspired dark desktop theme with centralized ImGui tokens
 - doctest unit tests
 - DPI-aware custom title bar with native move, resize, system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
@@ -163,6 +164,12 @@ System controls are drawn with ImGui primitives because GLFW and the window syst
 ImGui input capture takes priority when a floating window, popup, or modal overlaps the custom title bar. The hit-test callback reads capture state cached by the previous ImGui frame and returns client space, allowing the ImGui surface to receive clicks and dragging instead of moving the native window.
 
 Dear ImGui multi-viewport support is intentionally disabled. Each detached viewport would need its own custom-title-bar state, drawing, and hit-test callback. Docking inside the main window is enabled.
+
+## Application icon
+
+Windows builds compile `Assets/Application/ApplicationIcon.rc` through Premake. The `GLFW_ICON` resource supplies the executable, taskbar, and default GLFW window icon. Replace `ApplicationIcon.ico` with a multi-resolution icon while keeping its filename and resource identifier. `ApplicationIcon.svg` is the editable source for the template icon.
+
+Linux application icons are installed with desktop packaging rather than embedded in the executable. Use the SVG when adding a `.desktop` entry or package for the derived application.
 
 ## Deliberately not included
 
