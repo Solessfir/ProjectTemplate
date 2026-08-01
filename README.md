@@ -170,12 +170,6 @@ Dear ImGui multi-viewport support is intentionally disabled. Each detached viewp
 
 The starter has no independent math domain. Standard C++ and ImGui's UI-local vector types are enough for the shell. Add GLM when a derived app gains real 2D or 3D rendering math, and keep GLM types out of application-facing interfaces.
 
-### General SVG icons
-
-The title-bar controls are resolution-independent vector primitives and need no files. Add [LunaSVG](https://github.com/sammycage/lunasvg) when the first application needs file-based SVG icon brushes. Keeping it opt-in avoids adding an SVG parser and rasterizer to every native app.
-
-Store future source icons under `Resources/Icons` as SVG. Rasterize and cache them by DPI and theme instead of embedding one bitmap size into the executable.
-
 ### Custom OpenGL rendering
 
 The starter uses only OpenGL 1.1 entry points directly; Dear ImGui owns its private OpenGL 3 loader. Add a pinned generated glad2 loader before writing custom modern OpenGL rendering. Do not call or include ImGui's private loader from application code.
