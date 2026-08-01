@@ -362,13 +362,14 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 {
 	ImGui::PushFont(Fonts.Medium, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 100.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
 	ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(255, 255, 255, 255));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(232, 232, 232, 255));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(210, 210, 210, 255));
 	const bool bPressed = ImGui::Button(Label);
 	ImGui::PopStyleColor(4);
-	ImGui::PopStyleVar();
+	ImGui::PopStyleVar(2);
 	ImGui::PopFont();
 	return bPressed;
 }

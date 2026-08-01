@@ -27,7 +27,7 @@ void ApplyApplicationTheme(ImGuiStyle& Style)
 	Style.ChildBorderSize = 1.0f;
 	Style.PopupRounding = 8.0f;
 	Style.PopupBorderSize = 1.0f;
-	Style.FramePadding = { 12.0f, 8.0f };
+	Style.FramePadding = { 12.0f, 4.0f };
 	Style.FrameRounding = 6.0f;
 	Style.FrameBorderSize = 1.0f;
 	Style.ItemSpacing = { 8.0f, 8.0f };
