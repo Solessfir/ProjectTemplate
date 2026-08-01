@@ -47,6 +47,16 @@ Setup.bat -VisualStudioVersion 2022
 GenerateProjectFiles.bat vs2022
 ```
 
+Open the generated root solution and run `StarterApp`, or build from a Visual Studio Developer Command Prompt:
+
+```bat
+msbuild ProjectTemplate.sln /m /t:StarterApp,StarterTests /p:Configuration=Development /p:Platform=x64
+Binaries\windows\x86_64\Development\StarterTests.exe
+Binaries\windows\x86_64\Development\StarterApp.exe
+```
+
+Use `ProjectTemplate.slnx` in the build command when Setup selected Visual Studio 2026.
+
 ### Linux
 
 Setup checks for a C++23 compiler and standard library with `<expected>` and `<print>`, Make, OpenGL, X11, Wayland, xkbcommon, `wayland-scanner`, and the normal download tools. GCC 14 or newer is required when using libstdc++. If a system package is missing, Setup prints an actionable command for Arch, Debian/Ubuntu, or Fedora.
@@ -100,11 +110,45 @@ ProjectTemplate/
 
 The runtime remains one executable target. `AssetBaker` is a dependency-free host tool used only when producing embedded Shipping assets. Split reusable runtime code into a static library only after the derived application has a real second consumer.
 
-## Assets
+## Using assets
 
 Debug and Development load loose files from `Assets`. Shipping reads `Assets/EmbeddedAssets.txt`, generates one source file under `Intermediate`, and compiles the selected binary data into `StarterApp`.
 
-List one forward-slash path per manifest line, relative to `Assets`. Blank lines and lines beginning with `#` are ignored. Regenerate project files after adding or removing manifest entries so the native build system tracks the complete input set.
+To add an asset:
+
+1. Put the source file under `Assets`, preserving its intended runtime path.
+2. Load it through `FAssetProvider` with a forward-slash path relative to `Assets`.
+3. Add the same path to `Assets/EmbeddedAssets.txt` when Shipping needs it.
+4. Regenerate project files after changing the manifest, then build Shipping normally.
+
+```cpp
+#include "Assets/AssetProvider.h"
+
+#include <print>
+
+ProjectTemplate::FAssetProvider AssetProvider("Assets");
+const auto IconData = AssetProvider.Load("Icons/Application.svg");
+if (!IconData)
+{
+	std::println(stderr, "Could not load application icon: {}", IconData.error().Message);
+}
+```
+
+`FAssetProvider` owns the loaded loose bytes. Keep it alive while code retains returned spans.
+
+Build Shipping to run `AssetBaker` automatically:
+
+```bat
+msbuild ProjectTemplate.sln /m /t:StarterApp /p:Configuration=Shipping /p:Platform=x64
+```
+
+```bash
+make --directory=Intermediate/ProjectFiles/gmake --jobs=2 config=shipping
+```
+
+Use `ProjectTemplate.slnx` for the Windows command when building with Visual Studio 2026. There is normally no reason to invoke `AssetBaker` directly.
+
+List one forward-slash path per manifest line, relative to `Assets`. Blank lines and lines beginning with `#` are ignored. Paths are validated and duplicate entries fail the bake instead of silently producing ambiguous output.
 
 Generated asset source is never committed. Application code accesses loose and embedded data through the same provider, and normal builds never download assets or tools.
 
