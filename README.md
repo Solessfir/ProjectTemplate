@@ -13,6 +13,7 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - OpenGL 3.3 presentation backend
 - Configuration-aware loose and embedded asset provider
 - C++23 asset baker for single-executable Shipping builds
+- Roboto Regular and Medium loaded from loose or embedded assets
 - doctest unit tests
 - DPI-aware custom title bar with native move, resize, system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
 - Windows and Linux GitHub Actions builds
@@ -105,6 +106,8 @@ Debug and Development load loose files from `Assets`. Shipping reads `Assets/Emb
 List one forward-slash path per manifest line, relative to `Assets`. Blank lines and lines beginning with `#` are ignored. Regenerate project files after adding or removing manifest entries so the native build system tracks the complete input set.
 
 Generated asset source is never committed. Application code accesses loose and embedded data through the same provider, and normal builds never download assets or tools.
+
+Roboto is stored under `Assets/Fonts/Roboto` with its SIL Open Font License. Dear ImGui keeps the source TTF data available for dynamic glyph generation and scales fonts through its DPI-aware font system.
 
 ## Custom title bar
 

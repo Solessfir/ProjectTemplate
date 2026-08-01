@@ -1,5 +1,6 @@
 #include "Application/Application.h"
 
+#include "Assets/AssetProvider.h"
 #include "UI/TitleBarLayout.h"
 
 #include <GLFW/glfw3.h>
@@ -12,6 +13,8 @@
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
+#include <limits>
+#include <optional>
 #include <print>
 #include <system_error>
 
@@ -31,6 +34,53 @@ struct FWindowState
 	bool bCursorInside = false;
 	bool bWayland = false;
 };
+
+struct FApplicationFonts
+{
+	ImFont* Regular = nullptr;
+	ImFont* Medium = nullptr;
+};
+
+[[nodiscard]] ImFont* LoadFont(
+	FAssetProvider& AssetProvider,
+	ImGuiIO& IO,
+	const std::string_view VirtualPath)
+{
+	const std::expected<std::span<const std::byte>, FAssetLoadError> FontData = AssetProvider.Load(VirtualPath);
+	if (!FontData)
+	{
+		std::println(stderr, "Could not load font '{}': {}", VirtualPath, FontData.error().Message);
+		return nullptr;
+	}
+	if (FontData->size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+	{
+		std::println(stderr, "Font is too large for Dear ImGui: {}", VirtualPath);
+		return nullptr;
+	}
+
+	ImFontConfig FontConfig;
+	// ImGui keeps the font source for dynamic glyph generation, so the asset provider owns it until context shutdown.
+	FontConfig.FontDataOwnedByAtlas = false;
+	return IO.Fonts->AddFontFromMemoryTTF(
+		const_cast<std::byte*>(FontData->data()),
+		static_cast<int>(FontData->size()),
+		0.0f,
+		&FontConfig);
+}
+
+[[nodiscard]] std::optional<FApplicationFonts> LoadApplicationFonts(FAssetProvider& AssetProvider, ImGuiIO& IO)
+{
+	FApplicationFonts Fonts;
+	Fonts.Regular = LoadFont(AssetProvider, IO, "Fonts/Roboto/Roboto-Regular.ttf");
+	Fonts.Medium = LoadFont(AssetProvider, IO, "Fonts/Roboto/Roboto-Medium.ttf");
+	if (Fonts.Regular == nullptr || Fonts.Medium == nullptr)
+	{
+		return std::nullopt;
+	}
+
+	IO.FontDefault = Fonts.Regular;
+	return Fonts;
+}
 
 void GlfwErrorCallback(const int Error, const char* const Description)
 {
@@ -317,6 +367,7 @@ void DrawWorkspace(const FTitleBarLayout& Layout, bool& bShowDemoWindow)
 
 int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 {
+	FAssetProvider AssetProvider("Assets");
 	glfwSetErrorCallback(GlfwErrorCallback);
 
 #ifdef __linux__
@@ -392,6 +443,15 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 	IO.ConfigDpiScaleFonts = true;
 	IO.IniFilename = "Saved/ImGui.ini";
 	IO.LogFilename = "Saved/ImGuiLog.txt";
+	ImGui::GetStyle().FontSizeBase = 15.0f;
+	const std::optional<FApplicationFonts> Fonts = LoadApplicationFonts(AssetProvider, IO);
+	if (!Fonts)
+	{
+		ImGui::DestroyContext();
+		glfwDestroyWindow(Window);
+		glfwTerminate();
+		return 1;
+	}
 
 	ImGui::StyleColorsDark();
 	const ImGuiStyle BaseStyle = ImGui::GetStyle();

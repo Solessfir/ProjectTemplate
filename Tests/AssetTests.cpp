@@ -74,3 +74,19 @@ TEST_CASE("Loose asset provider reports invalid and missing paths")
 	REQUIRE_FALSE(MissingResult);
 	CHECK(MissingResult.error().Code == EAssetLoadError::NotFound);
 }
+
+TEST_CASE("Roboto font sources are available through the loose asset provider")
+{
+	FAssetProvider Provider("Assets");
+
+	const auto RegularFont = Provider.Load("Fonts/Roboto/Roboto-Regular.ttf");
+	const auto MediumFont = Provider.Load("Fonts/Roboto/Roboto-Medium.ttf");
+	const auto License = Provider.Load("Fonts/Roboto/OFL.txt");
+
+	REQUIRE(RegularFont);
+	REQUIRE(MediumFont);
+	REQUIRE(License);
+	CHECK(RegularFont->size() == 159108);
+	CHECK(MediumFont->size() == 159296);
+	CHECK(License->size() == 4487);
+}
