@@ -1,0 +1,43 @@
+# Generated build state
+/Binaries/
+/Intermediate/
+/Saved/
+/External/Premake/
+
+# Generated project files
+/*.sln
+/*.slnx
+/*.make
+/*.workspace
+/Makefile
+/compile_commands.json
+/.vs/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.suo
+*.user
+
+# IDE state
+/.idea/
+/.vscode/*
+!/.vscode/extensions.json
+!/.vscode/settings.json
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# Compiler output
+*.d
+*.ilk
+*.obj
+*.o
+*.pdb
+*.profraw
+*.profdata
+
+# Platform metadata
+.DS_Store
+Desktop.ini
+Thumbs.db

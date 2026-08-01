@@ -1,0 +1,198 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows MSVC 2022 Development
+            runner: windows-2022
+            platform: windows
+            configuration: Development
+            visual_studio_version: 2022
+            premake_action: vs2022
+            solution: ProjectTemplate.sln
+          - name: Windows MSVC 2026 Shipping
+            runner: windows-2025-vs2026
+            platform: windows
+            configuration: Shipping
+            visual_studio_version: 2026
+            premake_action: vs2026
+            solution: ProjectTemplate.slnx
+          - name: Linux GCC Development
+            runner: ubuntu-24.04
+            platform: linux
+            configuration: Development
+            cc: gcc-14
+            cxx: g++-14
+          - name: Linux Clang Shipping
+            runner: ubuntu-24.04
+            platform: linux
+            configuration: Shipping
+            cc: clang
+            cxx: clang++
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Linux window-system packages
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: >-
+          sudo apt-get update &&
+          sudo apt-get install -y
+          libgl1-mesa-dev
+          libx11-dev
+          libxrandr-dev
+          libxinerama-dev
+          libxcursor-dev
+          libxi-dev
+          libxkbcommon-dev
+          libwayland-dev
+          wayland-protocols
+          weston
+          xvfb
+
+      - name: Test dependency lock parser on Windows
+        if: matrix.platform == 'windows'
+        shell: powershell
+        run: .\Scripts\Tests\DependencyLock.Tests.ps1
+
+      - name: Test dependency lock parser on Linux
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: bash ./Scripts/Tests/DependencyLock.Tests.sh
+
+      - name: Set up project on Windows
+        if: matrix.platform == 'windows'
+        shell: cmd
+        run: Setup.bat -VisualStudioVersion ${{ matrix.visual_studio_version }}
+
+      - name: Generate Visual Studio projects
+        if: matrix.platform == 'windows'
+        shell: cmd
+        run: GenerateProjectFiles.bat ${{ matrix.premake_action }}
+
+      - name: Build project on Windows
+        if: matrix.platform == 'windows'
+        shell: cmd
+        run: >-
+          msbuild ${{ matrix.solution }}
+          /m
+          /t:StarterApp,StarterTests
+          /p:Configuration=${{ matrix.configuration }}
+          /p:Platform=x64
+          /verbosity:minimal
+
+      - name: Run tests on Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: .\Binaries\windows\x86_64\${{ matrix.configuration }}\StarterTests.exe
+
+      - name: Set up project on Linux
+        if: matrix.platform == 'linux'
+        shell: bash
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: bash ./Setup.sh
+
+      - name: Generate GNU Make projects
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: bash ./GenerateProjectFiles.sh
+
+      - name: Build project on Linux
+        if: matrix.platform == 'linux'
+        shell: bash
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          Configuration="${{ matrix.configuration }}"
+          make --directory=Intermediate/ProjectFiles/gmake \
+            --jobs=2 \
+            config="${Configuration,,}"
+
+      - name: Run tests and X11 application smoke test on Linux
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          ./Binaries/linux/x86_64/${{ matrix.configuration }}/StarterTests
+          xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 \
+            ./Binaries/linux/x86_64/${{ matrix.configuration }}/StarterApp \
+            --smoke-test --platform=x11
+
+      - name: Run Wayland application smoke test on Linux
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          RuntimeDirectory="$(mktemp -d)"
+          chmod 700 "$RuntimeDirectory"
+          export XDG_RUNTIME_DIR="$RuntimeDirectory"
+
+          weston \
+            --backend=headless-backend.so \
+            --socket=wayland-ci \
+            --idle-time=0 \
+            --log="$RuntimeDirectory/weston.log" &
+          WestonPid=$!
+          trap 'kill "$WestonPid" 2>/dev/null || true; rm -rf -- "$RuntimeDirectory"' EXIT
+
+          for Attempt in {1..50}; do
+            if [[ -S "$RuntimeDirectory/wayland-ci" ]]; then break; fi
+            if ! kill -0 "$WestonPid" 2>/dev/null; then
+              cat "$RuntimeDirectory/weston.log"
+              exit 1
+            fi
+            sleep 0.1
+          done
+
+          test -S "$RuntimeDirectory/wayland-ci" || {
+            cat "$RuntimeDirectory/weston.log"
+            exit 1
+          }
+          DISPLAY= WAYLAND_DISPLAY=wayland-ci LIBGL_ALWAYS_SOFTWARE=1 \
+            ./Binaries/linux/x86_64/${{ matrix.configuration }}/StarterApp \
+            --smoke-test --platform=wayland
+
+  required:
+    name: required
+    if: ${{ always() }}
+    needs:
+      - build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every build
+        shell: bash
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: test "$BUILD_RESULT" = success
