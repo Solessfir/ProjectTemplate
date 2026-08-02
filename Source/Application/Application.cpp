@@ -374,6 +374,24 @@ void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const fl
 		Theme::Rounding::TitleBarControlRounding * Height / 40.0f);
 }
 
+void DrawRestoreGlyph(ImDrawList& DrawList, const ImVec2 Center, const float Scale, const ImU32 Color, const float Thickness)
+{
+	const float BackLeft = Center.x - 3.0f * Scale;
+	const float BackTop = Center.y - 5.0f * Scale;
+	const float BackRight = Center.x + 5.0f * Scale;
+	const float BackBottom = Center.y + 3.0f * Scale;
+	const float FrontLeft = Center.x - 5.0f * Scale;
+	const float FrontTop = Center.y - 3.0f * Scale;
+	const float FrontRight = Center.x + 3.0f * Scale;
+	const float FrontBottom = Center.y + 5.0f * Scale;
+
+	DrawList.AddLine({ BackLeft, BackTop }, { BackRight, BackTop }, Color, Thickness);
+	DrawList.AddLine({ BackRight, BackTop }, { BackRight, BackBottom }, Color, Thickness);
+	DrawList.AddLine({ BackLeft, BackTop }, { BackLeft, FrontTop }, Color, Thickness);
+	DrawList.AddLine({ FrontRight, BackBottom }, { BackRight, BackBottom }, Color, Thickness);
+	DrawList.AddRect({ FrontLeft, FrontTop }, { FrontRight, FrontBottom }, Color, 0.0f, 0, Thickness);
+}
+
 void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 {
 	const FTitleBarLayout& Layout = State.TitleBar;
@@ -425,21 +443,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 	const float MaximizeCenterX = Width - ButtonWidth * 1.5f;
 	if (Layout.bMaximized)
 	{
-		DrawList.AddRect(
-			{ MaximizeCenterX - 3.0f * Scale, CenterY - 5.0f * Scale },
-			{ MaximizeCenterX + 5.0f * Scale, CenterY + 3.0f * Scale },
-			GlyphColor,
-			0.0f,
-			0,
-			LineThickness);
-
-		DrawList.AddRect(
-			{ MaximizeCenterX - 5.0f * Scale, CenterY - 3.0f * Scale },
-			{ MaximizeCenterX + 3.0f * Scale, CenterY + 5.0f * Scale },
-			GlyphColor,
-			0.0f,
-			0,
-			LineThickness);
+		DrawRestoreGlyph(DrawList, { MaximizeCenterX, CenterY }, Scale, GlyphColor, LineThickness);
 	}
 	else
 	{
@@ -650,6 +654,7 @@ void DrawAppearanceCard(FUiState& State, const FApplicationFonts& Fonts)
 			{
 				State.PanelTransparencyMode = Option.Mode;
 			}
+
 			if (bSelected)
 			{
 				ImGui::SetItemDefaultFocus();
@@ -807,6 +812,7 @@ void DrawWorkspaceToolbar(FUiState& State, const FApplicationFonts& Fonts, const
 		ImGui::TextDisabled("%s | x64", BuildConfiguration);
 		ImGui::SameLine();
 	}
+
 	if (ImGui::Button("Components##Toolbar"))
 	{
 		State.bShowDemoWindow = true;
@@ -1029,6 +1035,7 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 		glfwTerminate();
 		return 1;
 	}
+
 	if (bHasMonitorWorkArea && glfwGetPlatform() != GLFW_PLATFORM_WAYLAND)
 	{
 		glfwSetWindowPos(Window, InitialWindowPlacement.X, InitialWindowPlacement.Y);

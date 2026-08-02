@@ -49,6 +49,7 @@ struct FTitleBarLayout
 	{
 		return WholeValue + 1;
 	}
+
 	if (Fraction <= -0.5f)
 	{
 		return WholeValue - 1;
@@ -107,14 +108,17 @@ struct FTitleBarLayout
 	{
 		return ETitleBarHitRegion::CloseButton;
 	}
+
 	if (X >= Layout.WindowWidth - Layout.ButtonWidth * 2)
 	{
 		return ETitleBarHitRegion::MaximizeButton;
 	}
+
 	if (X >= Layout.WindowWidth - Layout.ButtonWidth * 3)
 	{
 		return ETitleBarHitRegion::MinimizeButton;
 	}
+
 	if (X < Layout.TitleBarHeight)
 	{
 		return ETitleBarHitRegion::SystemMenu;

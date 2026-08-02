@@ -194,6 +194,7 @@ std::expected<std::string, FError> GenerateSource(const std::span<const FAsset> 
 		{
 			return std::unexpected(FError{ "Asset path is not normalized: " + Asset.VirtualPath });
 		}
+
 		if (!UniquePaths.emplace(Asset.VirtualPath).second)
 		{
 			return std::unexpected(FError{ "Duplicate asset path: " + Asset.VirtualPath });
@@ -235,6 +236,7 @@ std::expected<std::string, FError> GenerateSource(const std::span<const FAsset> 
 				Source << ", ";
 			}
 		}
+
 		if (!Asset.Bytes.empty())
 		{
 			Source << '\n';
