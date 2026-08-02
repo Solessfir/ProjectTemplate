@@ -4,7 +4,7 @@ A modern C++23 quick-start template for native Windows and Linux applications us
 
 The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheCherno/ProjectTemplate), with pinned dependencies, local tool bootstrap, CI, tests, and a custom-title-bar GLFW fork.
 
-![Project Template application shell](Docs/Images/ProjectTemplate.png)
+![Project Template application shell](.github/ProjectTemplate.png)
 
 ## Included
 
@@ -111,7 +111,6 @@ ProjectTemplate/
 |-- .github/                 # CI, CodeQL, dependency updates
 |-- Assets/                  # Loose source assets and embedding manifest
 |-- Config/                  # Pinned downloaded-tool lock
-|-- Docs/                    # Documentation images
 |-- External/                # Pinned third-party sources and tools
 |   `-- Premake/             # Ignored host binaries installed by Setup
 |-- Scripts/                 # Setup, dependency validation, cleanup
