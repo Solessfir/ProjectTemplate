@@ -63,7 +63,7 @@ std::expected<std::span<const std::byte>, FAssetLoadError> FAssetProvider::Load(
 		});
 	}
 
-	std::vector<char> Bytes(static_cast<std::size_t>(EndPosition));
+	std::vector<char> Bytes(EndPosition);
 	Stream.seekg(0, std::ios::beg);
 	if (!Bytes.empty() && !Stream.read(Bytes.data(), static_cast<std::streamsize>(Bytes.size())))
 	{

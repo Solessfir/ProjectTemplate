@@ -40,7 +40,20 @@ struct FTitleBarLayout
 
 [[nodiscard]] constexpr int ScaleTitleBarMetric(const int Value, const float ContentScale) noexcept
 {
-	return static_cast<int>(static_cast<float>(Value) * ContentScale + 0.5f);
+	const float ScaledValue = static_cast<float>(Value) * ContentScale;
+	const int WholeValue = static_cast<int>(ScaledValue);
+	const float Fraction = ScaledValue - static_cast<float>(WholeValue);
+
+	// MSVC's C++23 standard library does not provide constexpr lround yet.
+	if (Fraction >= 0.5f)
+	{
+		return WholeValue + 1;
+	}
+	if (Fraction <= -0.5f)
+	{
+		return WholeValue - 1;
+	}
+	return WholeValue;
 }
 
 [[nodiscard]] constexpr FTitleBarLayout MakeTitleBarLayout(const int WindowWidth, const int WindowHeight, const float ContentScale, const bool bResizable, const bool bMaximized) noexcept
