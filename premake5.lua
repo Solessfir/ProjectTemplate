@@ -367,8 +367,12 @@ project "StarterTests"
         Root .. "/Source/Assets/AssetPath.h",
         Root .. "/Source/Assets/AssetProvider.cpp",
         Root .. "/Source/Assets/AssetProvider.h",
+        Root .. "/Source/Logging/Log.cpp",
+        Root .. "/Source/Logging/Log.h",
         Root .. "/Tools/AssetBaker/AssetBake.cpp",
         Root .. "/Tools/AssetBaker/AssetBake.h",
+        Root .. "/Source/UI/LogTextSelection.h",
+        Root .. "/Source/UI/OutputLog.h",
         Root .. "/Source/UI/TitleBarLayout.h",
         Root .. "/Tests/**.cpp"
     }
@@ -378,3 +382,8 @@ project "StarterTests"
         Root .. "/Tools/AssetBaker",
         External .. "/doctest"
     }
+
+    filter "system:linux"
+        links { "pthread" }
+
+    filter {}

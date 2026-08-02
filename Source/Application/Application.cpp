@@ -1,7 +1,9 @@
 #include "Application/Application.h"
 
 #include "Assets/AssetProvider.h"
+#include "Logging/Log.h"
 #include "UI/ApplicationTheme.h"
+#include "UI/OutputLog.h"
 #include "UI/TitleBarLayout.h"
 #include "UI/WorkspaceLayout.h"
 
@@ -13,6 +15,7 @@
 #include <imgui_internal.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
@@ -27,6 +30,8 @@ namespace ProjectTemplate
 namespace
 {
 constexpr const char* ApplicationTitle = "Project Template";
+constexpr const char* MainDockspaceName = "MainDockspaceV3";
+constexpr std::array<std::string_view, 4> OutputLogCommands = { "clear", "components", "help", "licenses" };
 constexpr int DefaultWindowWidth = 1280;
 constexpr int DefaultWindowHeight = 720;
 constexpr int InitialWindowWorkAreaPercent = 80;
@@ -76,7 +81,9 @@ struct FUiState
 	int BackgroundPreset = Theme::Background::DefaultPreset;
 	EPanelTransparencyMode PanelTransparencyMode = EPanelTransparencyMode::All;
 	bool bStartPanelDocked = true;
+	bool bOutputLogDocked = true;
 	bool bDemoPanelDocked = false;
+	bool bShowOutputLog = true;
 	bool bShowDemoWindow = false;
 	bool bOpenLicenses = false;
 };
@@ -85,6 +92,7 @@ struct FApplicationRuntime
 {
 	FWindowState Window;
 	FUiState Ui;
+	FOutputLogPanel OutputLog;
 	const FApplicationResources* Resources = nullptr;
 	ImGuiStyle BaseStyle;
 	float PreviousContentScale = 0.0f;
@@ -123,19 +131,21 @@ void SetNextPanelTransparency(const EPanelTransparencyMode Mode, const bool bDoc
 	ImGui::SetNextWindowBgAlpha(IsPanelTransparent(Mode, bDocked) ? 0.0f : 1.0f);
 }
 
-void EnsureDefaultDockLayout(const ImGuiID DockspaceId)
+void EnsureDefaultDockLayout(const ImGuiID DockspaceId, const ImVec2 DockspaceSize)
 {
-	// Existing window settings own the layout after first launch, including an intentionally floating Start window.
-	if (ImGui::FindWindowSettingsByID(ImHashStr("Start")) != nullptr)
+	// Bump MainDockspaceName when a structural default changes. Existing layouts remain user-owned between versions.
+	if (ImGui::DockBuilderGetNode(DockspaceId) != nullptr)
 	{
 		return;
 	}
 
-	if (ImGui::DockBuilderGetNode(DockspaceId) == nullptr)
-	{
-		ImGui::DockBuilderAddNode(DockspaceId, ImGuiDockNodeFlags_DockSpace);
-	}
-	ImGui::DockBuilderDockWindow("Start", DockspaceId);
+	ImGui::DockBuilderAddNode(DockspaceId, ImGuiDockNodeFlags_DockSpace);
+	ImGui::DockBuilderSetNodeSize(DockspaceId, DockspaceSize);
+	ImGuiID CenterDockId = DockspaceId;
+	ImGuiID OutputLogDockId = 0;
+	ImGui::DockBuilderSplitNode(DockspaceId, ImGuiDir_Down, 0.27f, &OutputLogDockId, &CenterDockId);
+	ImGui::DockBuilderDockWindow("Start", CenterDockId);
+	ImGui::DockBuilderDockWindow("Output Log", OutputLogDockId);
 	ImGui::DockBuilderFinish(DockspaceId);
 }
 
@@ -215,7 +225,7 @@ void EnsureDefaultDockLayout(const ImGuiID DockspaceId)
 
 void GlfwErrorCallback(const int Error, const char* const Description)
 {
-	std::println(stderr, "GLFW error {}: {}", Error, Description);
+	Log::Error("GLFW", "Error {}: {}", Error, Description);
 }
 
 [[nodiscard]] FApplicationRuntime* GetApplicationRuntime(GLFWwindow* const Window)
@@ -574,6 +584,8 @@ void DrawApplicationMenu(GLFWwindow* const Window, const FTitleBarLayout& Layout
 	ImGui::SetNextWindowPos({ ButtonPosition.x, Height }, ImGuiCond_Appearing);
 	if (ImGui::BeginPopup("ApplicationMenu"))
 	{
+		ImGui::MenuItem("Output Log", nullptr, &State.bShowOutputLog);
+
 		if (ImGui::MenuItem("Components"))
 		{
 			State.bShowDemoWindow = true;
@@ -913,12 +925,15 @@ void DrawWorkspaceToolbar(FUiState& State, const FApplicationFonts& Fonts, const
 
 	constexpr const char* ComponentsLabel = "Components";
 	constexpr const char* LicensesLabel = "Licenses";
+	constexpr const char* OutputLogLabel = "Output Log";
 	const ImGuiStyle& Style = ImGui::GetStyle();
 	const bool bShowStatus = ShouldShowToolbarStatus(ImGui::GetWindowWidth(), InterfaceScale);
+	const bool bShowOutputLogAction = ImGui::GetWindowWidth() >= 620.0f * InterfaceScale;
 	const float StatusWidth = bShowStatus ? ImGui::CalcTextSize(BuildConfiguration).x + ImGui::CalcTextSize(" | x64").x : 0.0f;
+	const float OutputLogWidth = bShowOutputLogAction ? ImGui::CalcTextSize(OutputLogLabel).x + Style.FramePadding.x * 2.0f : 0.0f;
 	const float ComponentsWidth = ImGui::CalcTextSize(ComponentsLabel).x + Style.FramePadding.x * 2.0f;
 	const float LicensesWidth = ImGui::CalcTextSize(LicensesLabel).x + Style.FramePadding.x * 2.0f;
-	const float RightGroupWidth = StatusWidth + ComponentsWidth + LicensesWidth + Style.ItemSpacing.x * (bShowStatus ? 2.0f : 1.0f);
+	const float RightGroupWidth = StatusWidth + OutputLogWidth + ComponentsWidth + LicensesWidth + Style.ItemSpacing.x * (1.0f + static_cast<float>(bShowStatus) + static_cast<float>(bShowOutputLogAction));
 	const float RightX = ResolveToolbarRightX(ImGui::GetWindowWidth(), MinimumRightX, RightGroupWidth, 16.0f * InterfaceScale);
 	ImGui::SetCursorPos({ RightX, ContentY });
 	if (bShowStatus)
@@ -928,6 +943,14 @@ void DrawWorkspaceToolbar(FUiState& State, const FApplicationFonts& Fonts, const
 		ImGui::SameLine();
 	}
 
+	if (bShowOutputLogAction)
+	{
+		if (ImGui::Button("Output Log##Toolbar"))
+		{
+			State.bShowOutputLog = true;
+		}
+		ImGui::SameLine();
+	}
 	if (ImGui::Button("Components##Toolbar"))
 	{
 		State.bShowDemoWindow = true;
@@ -941,7 +964,36 @@ void DrawWorkspaceToolbar(FUiState& State, const FApplicationFonts& Fonts, const
 	ImGui::EndChild();
 }
 
-void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& Resources, FUiState& State)
+void ExecuteOutputLogCommand(const std::string_view Command, FUiState& State, FOutputLogPanel& OutputLog)
+{
+	if (Command == "clear")
+	{
+		OutputLog.Clear(Log::GetBuffer());
+		return;
+	}
+
+	Log::Info("Command", "> {}", Command);
+	if (Command == "help")
+	{
+		Log::Info("Command", "Commands: clear, components, help, licenses");
+	}
+	else if (Command == "components")
+	{
+		State.bShowDemoWindow = true;
+		Log::Info("Command", "Opened the Dear ImGui components window");
+	}
+	else if (Command == "licenses")
+	{
+		State.bOpenLicenses = true;
+		Log::Info("Command", "Opened third-party licenses");
+	}
+	else
+	{
+		Log::Warning("Command", "Unknown command '{}'. Type help for available commands", Command);
+	}
+}
+
+void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& Resources, FUiState& State, FOutputLogPanel& OutputLog)
 {
 	const ImGuiIO& IO = ImGui::GetIO();
 	const float TitleBarHeight = static_cast<float>(Layout.TitleBarHeight);
@@ -951,6 +1003,7 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 		IO.DisplaySize.x,
 		std::max(0.0f, IO.DisplaySize.y - TitleBarHeight)
 	};
+	const float DockspaceHeight = std::max(0.0f, WorkspaceSize.y - ToolbarHeight);
 
 	ImGui::SetNextWindowPos({ 0.0f, TitleBarHeight });
 	ImGui::SetNextWindowSize(WorkspaceSize);
@@ -970,8 +1023,8 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 	ImGui::PopStyleVar(3);
 	DrawWorkspaceToolbar(State, Resources.Fonts, ToolbarHeight);
 	ImGui::SetCursorPos({ 0.0f, ToolbarHeight });
-	const ImGuiID MainDockspaceId = ImGui::GetID("MainDockspace");
-	EnsureDefaultDockLayout(MainDockspaceId);
+	const ImGuiID MainDockspaceId = ImGui::GetID(MainDockspaceName);
+	EnsureDefaultDockLayout(MainDockspaceId, { WorkspaceSize.x, DockspaceHeight });
 	ImVec4 DockspaceBackground = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
 	DockspaceBackground.w = IsPanelTransparent(State.PanelTransparencyMode, true) ? 0.0f : 1.0f;
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, DockspaceBackground);
@@ -982,7 +1035,6 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 	ImGui::PopStyleColor();
 	ImGui::End();
 
-	const float DockspaceHeight = std::max(0.0f, WorkspaceSize.y - ToolbarHeight);
 	const ImVec2 WelcomeSize = {
 		std::min(880.0f * InterfaceScale, std::max(320.0f, WorkspaceSize.x - 64.0f * InterfaceScale)),
 		std::min(590.0f * InterfaceScale, std::max(300.0f, DockspaceHeight - 64.0f * InterfaceScale))
@@ -1022,6 +1074,16 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 	ImGui::SameLine();
 	ImGui::TextDisabled("  |  Roboto  |  OpenGL 3.3");
 	ImGui::End();
+
+	if (State.bShowOutputLog)
+	{
+		SetNextPanelTransparency(State.PanelTransparencyMode, State.bOutputLogDocked);
+		const std::optional<std::string> Command = OutputLog.Draw(Log::GetBuffer(), &State.bShowOutputLog, State.bOutputLogDocked, OutputLogCommands);
+		if (Command)
+		{
+			ExecuteOutputLogCommand(*Command, State, OutputLog);
+		}
+	}
 
 	if (State.bShowDemoWindow)
 	{
@@ -1067,7 +1129,7 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 
 	DrawApplicationBackground(Runtime.Ui);
 	DrawTitleBar(Runtime.Window, Runtime.Resources->Fonts);
-	DrawWorkspace(Runtime.Window.TitleBar, *Runtime.Resources, Runtime.Ui);
+	DrawWorkspace(Runtime.Window.TitleBar, *Runtime.Resources, Runtime.Ui, Runtime.OutputLog);
 	DrawApplicationMenu(Window, Runtime.Window.TitleBar, Runtime.Ui);
 
 	ImGui::Render();
@@ -1094,6 +1156,8 @@ void WindowRefreshCallback(GLFWwindow* const Window)
 
 int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 {
+	Log::GetBuffer().Clear();
+	Log::Info("Application", "Starting {} in {} configuration", ApplicationTitle, BuildConfiguration);
 	FAssetProvider AssetProvider("Assets");
 	glfwSetErrorCallback(GlfwErrorCallback);
 
@@ -1112,6 +1176,7 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 
 	if (glfwInit() != GLFW_TRUE)
 	{
+		Log::Error("GLFW", "Initialization failed");
 		return 1;
 	}
 
@@ -1148,6 +1213,7 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 	GLFWwindow* const Window = glfwCreateWindow(InitialWindowPlacement.Width, InitialWindowPlacement.Height, ApplicationTitle, nullptr, nullptr);
 	if (Window == nullptr)
 	{
+		Log::Error("Window", "Could not create the main window");
 		glfwTerminate();
 		return 1;
 	}
@@ -1216,20 +1282,28 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 	std::filesystem::create_directories("Saved", DirectoryError);
 	if (DirectoryError)
 	{
-		std::println(stderr, "Could not create Saved directory: {}", DirectoryError.message());
+		Log::Warning("Filesystem", "Could not create Saved directory: {}", DirectoryError.message());
 	}
 
 	const bool bGlfwBackendInitialized = ImGui_ImplGlfw_InitForOpenGL(Window, true);
 	const bool bOpenGlBackendInitialized = bGlfwBackendInitialized && ImGui_ImplOpenGL3_Init("#version 330");
 	if (!bOpenGlBackendInitialized)
 	{
-		if (bGlfwBackendInitialized) ImGui_ImplGlfw_Shutdown();
+		Log::Error("Renderer", "Could not initialize the Dear ImGui OpenGL backend");
+		if (bGlfwBackendInitialized)
+		{
+			ImGui_ImplGlfw_Shutdown();
+		}
 		ImGui::DestroyContext();
 		glfwDestroyWindow(Window);
 		glfwTerminate();
 		return 1;
 	}
 
+	Log::Info("Window", "Created a {} x {} main window", WindowState.TitleBar.WindowWidth, WindowState.TitleBar.WindowHeight);
+	Log::Info("Renderer", "OpenGL 3.3 rendering initialized");
+	Log::Info("UI", "Dear ImGui docking and custom title bar initialized");
+	Log::Info("Application", "Workspace ready. Type help in the Output Log for commands");
 	Runtime.bRendererReady = true;
 	glfwSetWindowRefreshCallback(Window, WindowRefreshCallback);
 	glfwShowWindow(Window);

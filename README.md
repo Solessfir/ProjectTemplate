@@ -21,11 +21,13 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - Live Start-page background presets and HSV color wheel with independent height, saturation, and intensity controls
 - Panel transparency modes for all, floating-only, docked-only, or opaque panel backgrounds
 - Additively brightened interaction states derived from the selected background hue, with a dedicated red close-button state
+- Thread-safe bounded logging with a docked, searchable UE-style Output Log
+- Stable category colorization across the whole log line, verbosity filters, copy, pause, auto-scroll, and command history
 - doctest unit tests
 - DPI-aware custom title bar with native move, resize, system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
 - Primary-monitor-aware startup sizing at 80% of the usable work area, centered where the window system permits
 - Event-driven minimized state that suspends UI polling and rendering until the window wakes
-- Title-bar application menu for components, licenses, and exit
+- Title-bar application menu for the Output Log, components, licenses, and exit
 - Windows and Linux GitHub Actions builds
 - CodeQL, dependency review, and Dependabot configuration
 
@@ -116,7 +118,8 @@ ProjectTemplate/
 |-- Scripts/                 # Setup, dependency validation, cleanup
 |-- Source/
 |   |-- Application/         # Window, OpenGL, ImGui, and app lifetime
-|   |-- UI/                  # Theme, workspace layout, and title-bar hit testing
+|   |-- Logging/             # Thread-safe bounded application log
+|   |-- UI/                  # Theme, docking, Output Log, and title-bar behavior
 |   `-- Main.cpp
 |-- Tests/
 |-- Tools/AssetBaker/        # Shipping asset code generator
@@ -172,6 +175,23 @@ Generated asset source is never committed. Application code accesses loose and e
 
 Roboto is stored under `Assets/Fonts/Roboto` with its SIL Open Font License. Shipping embeds the license text and exposes it through `View licenses`; a missing license file fails asset baking. Dear ImGui rasterizes the source TTF data through FreeType with native hinting and scales fonts through its DPI-aware font system.
 
+## Logging and Output Log
+
+Use the application-owned logger from any thread:
+
+```cpp
+#include "Logging/Log.h"
+
+ProjectTemplate::Log::Info("Importer", "Imported {} assets", ImportedAssetCount);
+ProjectTemplate::Log::Warning("Importer", "Asset '{}' has no thumbnail", AssetName);
+```
+
+`Trace`, `Debug`, `Info`, `Warning`, and `Error` write to standard error and the in-memory Output Log. The buffer retains the newest 8192 records and exposes incremental cursors, so the UI does not hold the logging mutex while drawing. Clearing the log safely invalidates existing readers.
+
+The Output Log is docked across the bottom on the default layout. Search covers message text, category, and verbosity. The log behaves like a read-only text editor: hold LMB and drag across any number of lines, use Ctrl+A to select all visible text, and use Ctrl+C or `Copy` to copy it. `Copy` falls back to all visible text when no range is selected. Category colorization assigns the same stable readable color to every record in a category. Warnings always use yellow and errors always use red. Category colorization can be disabled under `Options`.
+
+The command line shows prefix matches above the input while typing. Use Up and Down to select a suggestion and Tab to complete it. When no suggestions are open, Up and Down navigate command history. The template commands are `help`, `clear`, `components`, and `licenses`; replace `OutputLogCommands` and `ExecuteOutputLogCommand` in `Source/Application/Application.cpp` with the derived application's command routing.
+
 ## Custom title bar
 
 The GLFW window remains decorated, but its native title bar is disabled with `GLFW_TITLEBAR`. A fast, allocation-free hit-test callback returns native caption, resize, system-menu, and window-control roles while ImGui draws the pixels.
@@ -197,6 +217,8 @@ Start with `DrawWorkspace` in `Source/Application/Application.cpp`. It is the to
 Use the surrounding files according to the boundary being changed:
 
 - `RunApplication` in `Source/Application/Application.cpp` owns GLFW, OpenGL, ImGui, assets, and the main loop. Change it for application lifetime or renderer integration, not ordinary feature UI.
+- `Source/Logging/Log.h/.cpp` owns logging storage and producer APIs. Keep application logging independent from the Output Log so alternate UI and file sinks can be added later.
+- `Source/UI/OutputLog.h/.cpp` owns filtering, category colorization, command history, and presentation.
 - `Source/UI/ApplicationTheme.h/.cpp` owns shared styling. Adjust `Colors`, `Background`, and `Rounding` in the header to customize the palette presets, gradient defaults, and corner radii without changing UI drawing code.
 - `Source/UI/TitleBarLayout.h` and `Tests/TitleBarTests.cpp` own native title-bar hit regions. Keep drawing and hit testing synchronized.
 - `Source/Main.cpp` is only the process entry point and command-line parsing.
@@ -218,7 +240,7 @@ The starter has no independent math domain. Standard C++ and ImGui's UI-local ve
 
 The starter uses only OpenGL 1.1 entry points directly; Dear ImGui owns its private OpenGL 3 loader. Add a pinned generated glad2 loader before writing custom modern OpenGL rendering. Do not call or include ImGui's private loader from application code.
 
-Also omitted until needed: spdlog, serialization, task systems, native file dialogs, audio, networking, and scripting.
+Also omitted until needed: external logging and rotating-file backends such as spdlog, serialization, task systems, native file dialogs, audio, networking, and scripting.
 
 ## Starting a real project
 
