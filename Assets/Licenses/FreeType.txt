@@ -1,0 +1,4 @@
+Portions of this software are copyright © 2026 The FreeType Project (https://freetype.org). All rights reserved.
+
+This software is based in part of the work of the FreeType Team.
+FreeType is used under the FreeType Project License.

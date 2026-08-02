@@ -7,3 +7,6 @@
 [submodule "External/doctest"]
 	path = External/doctest
 	url = https://github.com/doctest/doctest.git
+[submodule "External/freetype"]
+	path = External/freetype
+	url = https://github.com/freetype/freetype.git

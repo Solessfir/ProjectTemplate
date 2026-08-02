@@ -4,3 +4,5 @@
 Fonts/Roboto/OFL.txt
 Fonts/Roboto/Roboto-Medium.ttf
 Fonts/Roboto/Roboto-Regular.ttf
+# FreeType's binary distribution terms require this acknowledgement to remain available.
+Licenses/FreeType.txt

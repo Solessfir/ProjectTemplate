@@ -62,6 +62,7 @@ struct FApplicationFonts
 struct FApplicationResources
 {
 	FApplicationFonts Fonts;
+	std::string FreeTypeLicense;
 	std::string RobotoLicense;
 };
 
@@ -163,6 +164,24 @@ void EnsureDefaultDockLayout(const ImGuiID DockspaceId)
 		&FontConfig);
 }
 
+[[nodiscard]] std::expected<std::string, FAssetLoadError> LoadTextAsset(FAssetProvider& AssetProvider, const std::string_view VirtualPath)
+{
+	const std::expected<std::span<const std::byte>, FAssetLoadError> Data = AssetProvider.Load(VirtualPath);
+	if (!Data)
+	{
+		return std::unexpected(Data.error());
+	}
+
+	std::string Text;
+	Text.reserve(Data->size());
+	for (const std::byte Byte : *Data)
+	{
+		Text.push_back(static_cast<char>(std::to_integer<unsigned char>(Byte)));
+	}
+
+	return Text;
+}
+
 [[nodiscard]] std::optional<FApplicationResources> LoadApplicationResources(FAssetProvider& AssetProvider, ImGuiIO& IO)
 {
 	FApplicationResources Resources;
@@ -173,19 +192,22 @@ void EnsureDefaultDockLayout(const ImGuiID DockspaceId)
 		return std::nullopt;
 	}
 
-	// Roboto is redistributed with the app, so its OFL text must remain available through the license viewer.
-	const std::expected<std::span<const std::byte>, FAssetLoadError> LicenseData = AssetProvider.Load("Fonts/Roboto/OFL.txt");
-	if (!LicenseData)
+	// Redistributed fonts and statically linked FreeType require their notices to remain available in binary builds.
+	std::expected<std::string, FAssetLoadError> RobotoLicense = LoadTextAsset(AssetProvider, "Fonts/Roboto/OFL.txt");
+	if (!RobotoLicense)
 	{
-		std::println(stderr, "Could not load Roboto license: {}", LicenseData.error().Message);
+		std::println(stderr, "Could not load Roboto license: {}", RobotoLicense.error().Message);
 		return std::nullopt;
 	}
+	Resources.RobotoLicense = std::move(*RobotoLicense);
 
-	Resources.RobotoLicense.reserve(LicenseData->size());
-	for (const std::byte Byte : *LicenseData)
+	std::expected<std::string, FAssetLoadError> FreeTypeLicense = LoadTextAsset(AssetProvider, "Licenses/FreeType.txt");
+	if (!FreeTypeLicense)
 	{
-		Resources.RobotoLicense.push_back(static_cast<char>(std::to_integer<unsigned char>(Byte)));
+		std::println(stderr, "Could not load FreeType license acknowledgement: {}", FreeTypeLicense.error().Message);
+		return std::nullopt;
 	}
+	Resources.FreeTypeLicense = std::move(*FreeTypeLicense);
 
 	IO.FontDefault = Resources.Fonts.Regular;
 	return Resources;
@@ -745,7 +767,7 @@ void DrawAppearanceCard(FUiState& State, const FApplicationFonts& Fonts)
 	ImGui::PopStyleVar(2);
 }
 
-void DrawLicenseModal(FUiState& State, const std::string& RobotoLicense)
+void DrawLicenseModal(FUiState& State, const FApplicationResources& Resources)
 {
 	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
 	if (State.bOpenLicenses)
@@ -757,16 +779,29 @@ void DrawLicenseModal(FUiState& State, const std::string& RobotoLicense)
 	ImGui::SetNextWindowSize({ 720.0f * InterfaceScale, 520.0f * InterfaceScale }, ImGuiCond_Appearing);
 	if (ImGui::BeginPopupModal("Open-source licenses", nullptr, ImGuiWindowFlags_NoSavedSettings))
 	{
-		ImGui::TextUnformatted("Roboto");
-		ImGui::SameLine();
-		ImGui::TextDisabled("SIL Open Font License 1.1");
-		ImGui::Separator();
-		ImGui::BeginChild(
-			"RobotoLicense",
-			{ 0.0f, -(ImGui::GetFrameHeightWithSpacing() + 8.0f * InterfaceScale) },
-			ImGuiChildFlags_Borders);
-		ImGui::TextUnformatted(RobotoLicense.data(), RobotoLicense.data() + RobotoLicense.size());
-		ImGui::EndChild();
+		const ImVec2 LicenseSize = { 0.0f, -(ImGui::GetFrameHeightWithSpacing() + 8.0f * InterfaceScale) };
+		if (ImGui::BeginTabBar("LicenseTabs"))
+		{
+			if (ImGui::BeginTabItem("Roboto"))
+			{
+				ImGui::TextDisabled("SIL Open Font License 1.1");
+				ImGui::BeginChild("RobotoLicense", LicenseSize, ImGuiChildFlags_Borders);
+				ImGui::TextUnformatted(Resources.RobotoLicense.data(), Resources.RobotoLicense.data() + Resources.RobotoLicense.size());
+				ImGui::EndChild();
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("FreeType"))
+			{
+				ImGui::TextDisabled("FreeType Project License");
+				ImGui::BeginChild("FreeTypeLicense", LicenseSize, ImGuiChildFlags_Borders);
+				ImGui::TextUnformatted(Resources.FreeTypeLicense.data(), Resources.FreeTypeLicense.data() + Resources.FreeTypeLicense.size());
+				ImGui::EndChild();
+				ImGui::EndTabItem();
+			}
+
+			ImGui::EndTabBar();
+		}
 
 		if (ImGui::Button("Close"))
 		{
@@ -918,7 +953,7 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 			State.bDemoPanelDocked = DemoWindow->DockIsActive;
 		}
 	}
-	DrawLicenseModal(State, Resources.RobotoLicense);
+	DrawLicenseModal(State, Resources);
 }
 
 void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runtime)

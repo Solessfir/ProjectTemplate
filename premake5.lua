@@ -159,6 +159,81 @@ project "GLFW"
 
     filter {}
 
+project "FreeType"
+    location(ProjectFiles)
+    kind "StaticLib"
+    language "C"
+    cdialect "C99"
+    warnings "Off"
+
+    ApplyProjectDirectories()
+
+    defines { "FT2_BUILD_LIBRARY" }
+
+    files {
+        External .. "/freetype/include/**.h",
+        External .. "/freetype/src/autofit/autofit.c",
+        External .. "/freetype/src/base/ftbase.c",
+        External .. "/freetype/src/base/ftbbox.c",
+        External .. "/freetype/src/base/ftbdf.c",
+        External .. "/freetype/src/base/ftbitmap.c",
+        External .. "/freetype/src/base/ftcid.c",
+        External .. "/freetype/src/base/ftfstype.c",
+        External .. "/freetype/src/base/ftgasp.c",
+        External .. "/freetype/src/base/ftglyph.c",
+        External .. "/freetype/src/base/ftgxval.c",
+        External .. "/freetype/src/base/ftinit.c",
+        External .. "/freetype/src/base/ftmm.c",
+        External .. "/freetype/src/base/ftotval.c",
+        External .. "/freetype/src/base/ftpatent.c",
+        External .. "/freetype/src/base/ftpfr.c",
+        External .. "/freetype/src/base/ftstroke.c",
+        External .. "/freetype/src/base/ftsynth.c",
+        External .. "/freetype/src/base/fttype1.c",
+        External .. "/freetype/src/base/ftwinfnt.c",
+        External .. "/freetype/src/bdf/bdf.c",
+        External .. "/freetype/src/bzip2/ftbzip2.c",
+        External .. "/freetype/src/cache/ftcache.c",
+        External .. "/freetype/src/cff/cff.c",
+        External .. "/freetype/src/cid/type1cid.c",
+        External .. "/freetype/src/gzip/ftgzip.c",
+        External .. "/freetype/src/lzw/ftlzw.c",
+        External .. "/freetype/src/pcf/pcf.c",
+        External .. "/freetype/src/pfr/pfr.c",
+        External .. "/freetype/src/psaux/psaux.c",
+        External .. "/freetype/src/pshinter/pshinter.c",
+        External .. "/freetype/src/psnames/psnames.c",
+        External .. "/freetype/src/raster/raster.c",
+        External .. "/freetype/src/sdf/sdf.c",
+        External .. "/freetype/src/sfnt/sfnt.c",
+        External .. "/freetype/src/smooth/smooth.c",
+        External .. "/freetype/src/svg/svg.c",
+        External .. "/freetype/src/truetype/truetype.c",
+        External .. "/freetype/src/type1/type1.c",
+        External .. "/freetype/src/type42/type42.c",
+        External .. "/freetype/src/winfonts/winfnt.c"
+    }
+
+    includedirs { External .. "/freetype/include" }
+
+    filter "system:windows"
+        defines {
+            "_CRT_NONSTDC_NO_WARNINGS",
+            "_CRT_SECURE_NO_WARNINGS"
+        }
+        files {
+            External .. "/freetype/builds/windows/ftdebug.c",
+            External .. "/freetype/builds/windows/ftsystem.c"
+        }
+
+    filter "system:linux"
+        files {
+            External .. "/freetype/src/base/ftdebug.c",
+            External .. "/freetype/src/base/ftsystem.c"
+        }
+
+    filter {}
+
 project "ImGui"
     location(ProjectFiles)
     kind "StaticLib"
@@ -166,6 +241,8 @@ project "ImGui"
     warnings "Off"
 
     ApplyProjectDirectories()
+
+    defines { "IMGUI_ENABLE_FREETYPE" }
 
     files {
         External .. "/imgui/imconfig.h",
@@ -180,13 +257,18 @@ project "ImGui"
         External .. "/imgui/backends/imgui_impl_glfw.h",
         External .. "/imgui/backends/imgui_impl_opengl3.cpp",
         External .. "/imgui/backends/imgui_impl_opengl3.h",
-        External .. "/imgui/backends/imgui_impl_opengl3_loader.h"
+        External .. "/imgui/backends/imgui_impl_opengl3_loader.h",
+        External .. "/imgui/misc/freetype/imgui_freetype.cpp",
+        External .. "/imgui/misc/freetype/imgui_freetype.h"
     }
 
     includedirs {
+        External .. "/freetype/include",
         External .. "/glfw/include",
         External .. "/imgui"
     }
+
+    links { "FreeType" }
 
 project "AssetBaker"
     location(ProjectFiles)
@@ -224,11 +306,12 @@ project "StarterApp"
 
     includedirs {
         Root .. "/Source",
+        External .. "/freetype/include",
         External .. "/glfw/include",
         External .. "/imgui"
     }
 
-    links { "ImGui", "GLFW" }
+    links { "ImGui", "GLFW", "FreeType" }
 
     filter "system:windows"
         entrypoint "mainCRTStartup"
