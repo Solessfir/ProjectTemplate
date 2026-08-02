@@ -15,9 +15,14 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - C++23 asset baker for single-executable Shipping builds
 - Roboto Regular and Medium loaded from loose or embedded assets
 - Replaceable application icon embedded into Windows builds
-- Framer-inspired dark desktop theme with centralized ImGui tokens
+- Framer-inspired graphite theme with one gradient-backed title bar, toolbar, and dock canvas plus centralized ImGui tokens
+- Live Start-page background presets and HSV color wheel with independent height, saturation, and intensity controls
+- Panel transparency modes for all, floating-only, docked-only, or opaque panel backgrounds
+- Additively brightened interaction states derived from the selected background hue, with a dedicated red close-button state
 - doctest unit tests
 - DPI-aware custom title bar with native move, resize, system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
+- Primary-monitor-aware startup sizing at 80% of the usable work area, centered where the window system permits
+- Event-driven minimized state that suspends UI polling and rendering until the window wakes
 - Windows and Linux GitHub Actions builds
 - CodeQL, dependency review, and Dependabot configuration
 
@@ -177,7 +182,7 @@ Start with `DrawWorkspace` in `Source/Application/Application.cpp`. It is the to
 Use the surrounding files according to the boundary being changed:
 
 - `RunApplication` in `Source/Application/Application.cpp` owns GLFW, OpenGL, ImGui, assets, and the main loop. Change it for application lifetime or renderer integration, not ordinary feature UI.
-- `Source/UI/ApplicationTheme.h/.cpp` owns shared sizing and color tokens.
+- `Source/UI/ApplicationTheme.h/.cpp` owns shared styling. Adjust `Colors`, `Background`, and `Rounding` in the header to customize the palette presets, gradient defaults, and corner radii without changing UI drawing code.
 - `Source/UI/TitleBarLayout.h` and `Tests/TitleBarTests.cpp` own native title-bar hit regions. Keep drawing and hit testing synchronized.
 - `Source/Main.cpp` is only the process entry point and command-line parsing.
 - `Assets` and `Assets/EmbeddedAssets.txt` contain runtime data. Add assets through `FAssetProvider` so loose and Shipping builds follow the same code path.
