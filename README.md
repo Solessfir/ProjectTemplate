@@ -1,15 +1,17 @@
 # C++ Native App Project Template
 
-A small C++23 starter for desktop applications on Windows and Linux. It provides a production-shaped application shell without turning the template into a game engine or framework.
+A modern C++23 quick-start template for native Windows and Linux applications using GLFW, Dear ImGui, Premake, and embedded assets. It provides a production-shaped application shell without turning the template into a framework.
 
-The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheCherno/ProjectTemplate), with pinned dependencies, local tool bootstrap, CI, tests, and Herta's GLFW custom title-bar fork.
+The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheCherno/ProjectTemplate), with pinned dependencies, local tool bootstrap, CI, tests, and a custom-title-bar GLFW fork.
+
+![Project Template application shell](Docs/Images/ProjectTemplate.png)
 
 ## Included
 
 - C++23
 - Premake 5, downloaded to `External/Premake` at a pinned version by Setup
-- [Herta GLFW fork](https://github.com/Solessfir/glfw) with custom title bars on Win32, X11, and Wayland
-- Dear ImGui docking branch
+- [GLFW fork](https://github.com/Solessfir/glfw) with custom title bars on Win32, X11, and Wayland
+- Dear ImGui docking branch with FreeType-rendered Roboto
 - OpenGL 3.3 presentation backend
 - Configuration-aware loose and embedded asset provider
 - C++23 asset baker for single-executable Shipping builds
@@ -23,6 +25,7 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - DPI-aware custom title bar with native move, resize, system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
 - Primary-monitor-aware startup sizing at 80% of the usable work area, centered where the window system permits
 - Event-driven minimized state that suspends UI polling and rendering until the window wakes
+- Title-bar application menu for components, licenses, and exit
 - Windows and Linux GitHub Actions builds
 - CodeQL, dependency review, and Dependabot configuration
 
@@ -98,6 +101,7 @@ ProjectTemplate/
 |-- .github/                 # CI, CodeQL, dependency updates
 |-- Assets/                  # Loose source assets and embedding manifest
 |-- Config/                  # Pinned downloaded-tool lock
+|-- Docs/                    # Documentation images
 |-- External/                # Pinned third-party sources and tools
 |   `-- Premake/             # Ignored host binaries installed by Setup
 |-- Scripts/                 # Setup, dependency validation, cleanup
@@ -157,13 +161,15 @@ List one forward-slash path per manifest line, relative to `Assets`. Blank lines
 
 Generated asset source is never committed. Application code accesses loose and embedded data through the same provider, and normal builds never download assets or tools.
 
-Roboto is stored under `Assets/Fonts/Roboto` with its SIL Open Font License. Shipping embeds the license text and exposes it through `View licenses`; a missing license file fails asset baking. Dear ImGui keeps the source TTF data available for dynamic glyph generation and scales fonts through its DPI-aware font system.
+Roboto is stored under `Assets/Fonts/Roboto` with its SIL Open Font License. Shipping embeds the license text and exposes it through `View licenses`; a missing license file fails asset baking. Dear ImGui rasterizes the source TTF data through FreeType with native hinting and scales fonts through its DPI-aware font system.
 
 ## Custom title bar
 
 The GLFW window remains decorated, but its native title bar is disabled with `GLFW_TITLEBAR`. A fast, allocation-free hit-test callback returns native caption, resize, system-menu, and window-control roles while ImGui draws the pixels.
 
 System controls are drawn with ImGui primitives because GLFW and the window system own their clicks. This preserves native behavior, including Windows 11 Snap Layout. Do not replace them with `ImGui::Button` without also returning `GLFW_HIT_TEST_CLIENT` for those rectangles.
+
+The adjacent hamburger menu remains an ImGui client control. It is the starting point for application commands and currently exposes components, licenses, and exit actions.
 
 ImGui input capture takes priority when a floating window, popup, or modal overlaps the custom title bar. The hit-test callback reads capture state cached by the previous ImGui frame and returns client space, allowing the ImGui surface to receive clicks and dragging instead of moving the native window.
 
