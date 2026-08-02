@@ -579,8 +579,7 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 		ImGuiInputTextFlags_CallbackHistory;
 	constexpr char SubmitLabel[] = "Submit";
 	const float SubmitButtonWidth = ImGui::CalcTextSize(SubmitLabel).x + ImGui::GetStyle().FramePadding.x * 2.0f;
-	const float SubmitRightPadding = 8.0f * InterfaceScale;
-	ImGui::SetNextItemWidth(-(SubmitButtonWidth + SubmitRightPadding + ImGui::GetStyle().ItemSpacing.x));
+	ImGui::SetNextItemWidth(-(SubmitButtonWidth + ImGui::GetStyle().ItemSpacing.x));
 	if (ImGui::InputTextWithHint("##OutputLogCommand", "Enter command, or type help", CommandBuffer.data(), CommandBuffer.size(), CommandFlags, HistoryCallback, &CommandInputContext))
 	{
 		SubmitCommand();
