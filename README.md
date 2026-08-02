@@ -52,8 +52,8 @@ Open the generated root solution and run `StarterApp`, or build from a Visual St
 
 ```bat
 msbuild ProjectTemplate.sln /m /t:StarterApp,StarterTests /p:Configuration=Development /p:Platform=x64
-Binaries\windows\x86_64\Development\StarterTests.exe
-Binaries\windows\x86_64\Development\StarterApp.exe
+Binaries\Windows\x86_64\Development\StarterTests.exe
+Binaries\Windows\x86_64\Development\StarterApp.exe
 ```
 
 Use `ProjectTemplate.slnx` in the build command when Setup selected Visual Studio 2026.
@@ -80,8 +80,8 @@ make --directory=Intermediate/ProjectFiles/gmake --jobs=2 config=development
 Run the application and tests:
 
 ```bash
-./Binaries/linux/x86_64/Development/StarterApp
-./Binaries/linux/x86_64/Development/StarterTests
+./Binaries/Linux/x86_64/Development/StarterApp
+./Binaries/Linux/x86_64/Development/StarterTests
 ```
 
 For backend-specific diagnostics, pass `--platform=x11` or `--platform=wayland`. Normal applications should leave platform selection to GLFW.
@@ -91,7 +91,6 @@ For backend-specific diagnostics, pass `--platform=x11` or `--platform=wayland`.
 ```text
 ProjectTemplate/
 |-- .github/                 # CI, CodeQL, dependency updates
-|-- Build/Premake/           # Workspace project and toolchain policy
 |-- Assets/                  # Loose source assets and embedding manifest
 |-- Config/                  # Pinned downloaded-tool lock
 |-- External/                # Pinned third-party sources and tools
@@ -106,7 +105,7 @@ ProjectTemplate/
 |-- Cleanup.bat/.sh
 |-- GenerateProjectFiles.bat/.sh
 |-- Setup.bat/.sh
-`-- premake5.lua
+`-- premake5.lua             # Complete workspace, toolchain, and target policy
 ```
 
 The runtime remains one executable target. `AssetBaker` is a dependency-free host tool used only when producing embedded Shipping assets. Split reusable runtime code into a static library only after the derived application has a real second consumer.
@@ -182,7 +181,7 @@ Use the surrounding files according to the boundary being changed:
 - `Source/UI/TitleBarLayout.h` and `Tests/TitleBarTests.cpp` own native title-bar hit regions. Keep drawing and hit testing synchronized.
 - `Source/Main.cpp` is only the process entry point and command-line parsing.
 - `Assets` and `Assets/EmbeddedAssets.txt` contain runtime data. Add assets through `FAssetProvider` so loose and Shipping builds follow the same code path.
-- `Build/Premake/Projects.lua` owns source targets, platform libraries, and build settings. Pin new source dependencies under `External` and expose them through an application-owned boundary.
+- `premake5.lua` owns source targets, platform libraries, and build settings. Pin new source dependencies under `External` and expose them through an application-owned boundary.
 - `Tests` contains doctest coverage for non-rendering behavior and regressions.
 
 For a small first feature, add its state and draw function near `DrawWorkspace`. Once it becomes independently testable or has a distinct lifetime, move it into a focused `.h/.cpp` pair under `Source`. The `StarterApp` project includes `Source/**`, but project files must be regenerated after adding or moving source files.

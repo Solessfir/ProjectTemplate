@@ -115,7 +115,7 @@ jobs:
       - name: Run tests on Windows
         if: matrix.platform == 'windows'
         shell: pwsh
-        run: .\Binaries\windows\x86_64\${{ matrix.configuration }}\StarterTests.exe
+        run: .\Binaries\Windows\x86_64\${{ matrix.configuration }}\StarterTests.exe
 
       - name: Set up project on Linux
         if: matrix.platform == 'linux'
@@ -146,9 +146,9 @@ jobs:
         if: matrix.platform == 'linux'
         shell: bash
         run: |
-          ./Binaries/linux/x86_64/${{ matrix.configuration }}/StarterTests
+          ./Binaries/Linux/x86_64/${{ matrix.configuration }}/StarterTests
           xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 \
-            ./Binaries/linux/x86_64/${{ matrix.configuration }}/StarterApp \
+            ./Binaries/Linux/x86_64/${{ matrix.configuration }}/StarterApp \
             --smoke-test --platform=x11
 
       - name: Run Wayland application smoke test on Linux
@@ -182,7 +182,7 @@ jobs:
             exit 1
           }
           DISPLAY= WAYLAND_DISPLAY=wayland-ci LIBGL_ALWAYS_SOFTWARE=1 \
-            ./Binaries/linux/x86_64/${{ matrix.configuration }}/StarterApp \
+            ./Binaries/Linux/x86_64/${{ matrix.configuration }}/StarterApp \
             --smoke-test --platform=wayland
 
   required:
