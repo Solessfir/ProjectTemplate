@@ -35,7 +35,18 @@ Source dependencies are pinned Git submodules. Normal project generation and bui
 
 ## Quick start
 
-Clone with Git, then run Setup once.
+Clone the repository with its pinned submodules, then run Setup once:
+
+```bash
+git clone --recursive https://github.com/Solessfir/ProjectTemplate.git
+cd ProjectTemplate
+```
+
+If the repository was cloned without `--recursive`, initialize the missing submodules before Setup:
+
+```bash
+git submodule update --init --recursive
+```
 
 ### Windows
 
@@ -104,6 +115,8 @@ Run the application and tests:
 ./Binaries/Linux/x86_64/Development/StarterTests
 ```
 
+`StarterApp` resolves loose assets and saved UI state from the repository when launched directly from `Binaries`, so its working directory does not need to be the repository root.
+
 For backend-specific diagnostics, pass `--platform=x11` or `--platform=wayland`. Normal applications should leave platform selection to GLFW.
 
 ## Project structure
@@ -167,7 +180,7 @@ msbuild ProjectTemplate.sln /m /t:StarterApp /p:Configuration=Shipping /p:Platfo
 make --directory=Intermediate/ProjectFiles/gmake --jobs=2 config=shipping
 ```
 
-Use `ProjectTemplate.slnx` for the Windows command when building with Visual Studio 2026. There is normally no reason to invoke `AssetBaker` directly.
+Use `ProjectTemplate.slnx` for the Windows command when building with Visual Studio 2026. `AssetBaker` is a build-only command-line tool, not the application. Running it without `--manifest`, `--asset-root`, and `--output` intentionally prints its usage and exits. Normal Shipping builds supply those arguments automatically.
 
 List one forward-slash path per manifest line, relative to `Assets`. Blank lines and lines beginning with `#` are ignored. Paths are validated and duplicate entries fail the bake instead of silently producing ambiguous output.
 

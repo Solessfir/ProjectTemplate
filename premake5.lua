@@ -364,6 +364,8 @@ project "StarterTests"
     ApplyProjectDirectories()
 
     files {
+        Root .. "/Source/Application/ApplicationPaths.cpp",
+        Root .. "/Source/Application/ApplicationPaths.h",
         Root .. "/Source/Assets/AssetPath.h",
         Root .. "/Source/Assets/AssetProvider.cpp",
         Root .. "/Source/Assets/AssetProvider.h",

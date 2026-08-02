@@ -1,4 +1,6 @@
 #include "Application/Application.h"
+
+#include <filesystem>
 #include <string_view>
 
 int main(const int ArgumentCount, char** const Arguments)
@@ -22,5 +24,6 @@ int main(const int ArgumentCount, char** const Arguments)
 		}
 	}
 
-	return ProjectTemplate::RunApplication(bSmokeTest, WindowPlatform);
+	const std::filesystem::path ExecutablePath = ArgumentCount > 0 && Arguments[0] != nullptr ? Arguments[0] : "StarterApp";
+	return ProjectTemplate::RunApplication(ExecutablePath, bSmokeTest, WindowPlatform);
 }

@@ -1,5 +1,6 @@
 #include "Application/Application.h"
 
+#include "Application/ApplicationPaths.h"
 #include "Assets/AssetProvider.h"
 #include "Logging/Log.h"
 #include "UI/ApplicationTheme.h"
@@ -1155,11 +1156,21 @@ void WindowRefreshCallback(GLFWwindow* const Window)
 
 }
 
-int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
+int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 {
 	Log::GetBuffer().Clear();
 	Log::Info("Application", "Starting {} in {} configuration", ApplicationTitle, BuildConfiguration);
-	FAssetProvider AssetProvider("Assets");
+	std::error_code WorkingDirectoryError;
+	const std::filesystem::path WorkingDirectory = std::filesystem::current_path(WorkingDirectoryError);
+	if (WorkingDirectoryError)
+	{
+		Log::Warning("Filesystem", "Could not resolve the working directory: {}", WorkingDirectoryError.message());
+	}
+
+	const FApplicationPaths Paths = ResolveApplicationPaths(ExecutablePath, WorkingDirectory);
+	FAssetProvider AssetProvider(Paths.AssetDirectory);
+	const std::string ImGuiIniPath = (Paths.SavedDirectory / "ImGui.ini").string();
+	const std::string ImGuiLogPath = (Paths.SavedDirectory / "ImGuiLog.txt").string();
 	glfwSetErrorCallback(GlfwErrorCallback);
 
 #ifdef __linux__
@@ -1263,8 +1274,8 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	IO.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
 	IO.ConfigDpiScaleFonts = true;
-	IO.IniFilename = "Saved/ImGui.ini";
-	IO.LogFilename = "Saved/ImGuiLog.txt";
+	IO.IniFilename = ImGuiIniPath.c_str();
+	IO.LogFilename = ImGuiLogPath.c_str();
 	ImGui::StyleColorsDark();
 	Theme::ApplyApplicationTheme(ImGui::GetStyle());
 	const std::optional<FApplicationResources> Resources = LoadApplicationResources(AssetProvider, IO);
@@ -1280,7 +1291,7 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 	Runtime.Resources = &*Resources;
 
 	std::error_code DirectoryError;
-	std::filesystem::create_directories("Saved", DirectoryError);
+	std::filesystem::create_directories(Paths.SavedDirectory, DirectoryError);
 	if (DirectoryError)
 	{
 		Log::Warning("Filesystem", "Could not create Saved directory: {}", DirectoryError.message());

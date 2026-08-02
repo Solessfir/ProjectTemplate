@@ -1,10 +1,28 @@
 #include "Logging/Log.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <print>
+
+#ifdef _WIN32
+#include <io.h>
+#endif
 
 namespace ProjectTemplate
 {
+namespace
+{
+[[nodiscard]] bool CanWriteToStandardError() noexcept
+{
+#ifdef _WIN32
+	// Explorer does not attach standard streams to a windowed application, and MSVC aborts if std::println receives that invalid stream.
+	return _fileno(stderr) >= 0;
+#else
+	return true;
+#endif
+}
+}
+
 FLogBuffer::FLogBuffer(const std::size_t InCapacity)
 	: Capacity(std::max<std::size_t>(1, InCapacity))
 {
@@ -96,7 +114,11 @@ FLogBuffer& GetBuffer()
 
 void Write(const ELogLevel Level, const std::string_view Category, std::string Message)
 {
-	std::println(stderr, "[{}] [{}] {}", GetLogLevelName(Level), Category, Message);
+	if (CanWriteToStandardError())
+	{
+		std::println(stderr, "[{}] [{}] {}", GetLogLevelName(Level), Category, Message);
+	}
+
 	(void)GetBuffer().Append(Level, Category, std::move(Message));
 }
 }

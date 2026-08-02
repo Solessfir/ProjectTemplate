@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 namespace ProjectTemplate
 {
 enum class EWindowPlatform
@@ -9,5 +11,5 @@ enum class EWindowPlatform
 	Wayland
 };
 
-int RunApplication(bool bSmokeTest, EWindowPlatform WindowPlatform);
+int RunApplication(const std::filesystem::path& ExecutablePath, bool bSmokeTest, EWindowPlatform WindowPlatform);
 }
