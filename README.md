@@ -1,10 +1,10 @@
 # C++ Native App Project Template
 
-A modern C++23 quick-start template for native Windows and Linux applications using GLFW, Dear ImGui, Premake, and embedded assets. It provides a production-shaped application shell without turning the template into a framework.
+A modern C++23 quick-start template for native Windows and Linux applications using GLFW, Dear ImGui, Premake, embedded assets, and a searchable Output Log. It provides a production-shaped application shell without turning the template into a framework.
 
 The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheCherno/ProjectTemplate), with pinned dependencies, local tool bootstrap, CI, tests, and a custom-title-bar GLFW fork.
 
-![Project Template application shell](.github/ProjectTemplate.png)
+![Project Template application shell with docked Output Log](.github/ProjectTemplate.png)
 
 ## Included
 
@@ -18,11 +18,11 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - Roboto Regular and Medium loaded from loose or embedded assets
 - Replaceable application icon embedded into Windows builds
 - Centralized Dear ImGui palette, interaction, and rounding tokens
-- Live Start-page background presets and HSV color wheel with independent height, saturation, and intensity controls
+- Live Start-page background presets and HSV color wheel with independent height, saturation, and intensity controls plus focus-aware desaturation
 - Panel transparency modes for all, floating-only, docked-only, or opaque panel backgrounds
 - Additively brightened interaction states derived from the selected background hue, with a dedicated red close-button state
 - Thread-safe bounded logging with a docked, searchable UE-style Output Log
-- Stable category colorization across the whole log line, verbosity filters, copy, pause, auto-scroll, and command history
+- Stable category colorization across the whole log line, continuous text selection, verbosity filters, copy, pause, auto-scroll, command completion, and history
 - doctest unit tests
 - DPI-aware custom title bar with native move, resize, system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
 - Primary-monitor-aware startup sizing at 80% of the usable work area, centered where the window system permits
