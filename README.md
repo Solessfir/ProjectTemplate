@@ -17,7 +17,7 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - C++23 asset baker for single-executable Shipping builds
 - Roboto Regular and Medium loaded from loose or embedded assets
 - Replaceable application icon embedded into Windows builds
-- Framer-inspired graphite theme with one gradient-backed title bar, toolbar, and dock canvas plus centralized ImGui tokens
+- Centralized Dear ImGui palette, interaction, and rounding tokens
 - Live Start-page background presets and HSV color wheel with independent height, saturation, and intensity controls
 - Panel transparency modes for all, floating-only, docked-only, or opaque panel backgrounds
 - Additively brightened interaction states derived from the selected background hue, with a dedicated red close-button state
@@ -108,7 +108,7 @@ For backend-specific diagnostics, pass `--platform=x11` or `--platform=wayland`.
 
 ```text
 ProjectTemplate/
-|-- .github/                 # CI, CodeQL, dependency updates
+|-- .github/                 # Repository automation and README media
 |-- Assets/                  # Loose source assets and embedding manifest
 |-- Config/                  # Pinned downloaded-tool lock
 |-- External/                # Pinned third-party sources and tools
@@ -116,7 +116,7 @@ ProjectTemplate/
 |-- Scripts/                 # Setup, dependency validation, cleanup
 |-- Source/
 |   |-- Application/         # Window, OpenGL, ImGui, and app lifetime
-|   |-- UI/                  # Pure title-bar layout and hit testing
+|   |-- UI/                  # Theme, workspace layout, and title-bar hit testing
 |   `-- Main.cpp
 |-- Tests/
 |-- Tools/AssetBaker/        # Shipping asset code generator
