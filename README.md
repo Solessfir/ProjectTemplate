@@ -82,7 +82,17 @@ On Ubuntu 24.04, select GCC 14 explicitly:
 export CC=gcc-14 CXX=g++-14
 bash ./Setup.sh
 bash ./GenerateProjectFiles.sh
-make --directory=Intermediate/ProjectFiles/gmake --jobs=2 config=development
+make --directory=Intermediate/ProjectFiles/gmake --jobs=2 config=development CC="$CC" CXX="$CXX"
+```
+
+For Clang builds on Ubuntu 24.04, use libc++ so the selected standard library provides the required C++23 surface:
+
+```bash
+sudo apt-get install -y clang libc++-dev libc++abi-dev
+export CC=clang CXX=clang++ CXXFLAGS=-stdlib=libc++ LDFLAGS=-stdlib=libc++
+bash ./Setup.sh
+bash ./GenerateProjectFiles.sh
+make --directory=Intermediate/ProjectFiles/gmake --jobs=2 config=development CC="$CC" CXX="$CXX"
 ```
 
 Run the application and tests:

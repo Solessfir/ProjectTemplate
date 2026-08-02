@@ -9,5 +9,19 @@ case "${action}" in
     *) echo "Unsupported Premake action '${action}'. Use gmake." >&2; exit 2 ;;
 esac
 
+compiler="${CXX:-${CC:-c++}}"
+compiler_path="$(command -v "${compiler}" 2>/dev/null || true)"
+if [[ -z "${compiler_path}" ]]; then
+    echo "Compiler '${compiler}' is not available. Run Setup.sh with a supported CC and CXX first." >&2
+    exit 1
+fi
+
+compiler_name="$(basename -- "$(readlink -f -- "${compiler_path}")")"
+case "${compiler_name}" in
+    *clang*) premake_compiler=clang ;;
+    *gcc*|*g++*|c++) premake_compiler=gcc ;;
+    *) echo "Unsupported C++ compiler '${compiler_path}'. Use GCC or Clang." >&2; exit 2 ;;
+esac
+
 premake_path="$("${root_dir}/Scripts/Setup.sh" --print-premake-path)"
-"${premake_path}" --file="${root_dir}/premake5.lua" "${action}"
+"${premake_path}" --file="${root_dir}/premake5.lua" --cc="${premake_compiler}" "${action}"

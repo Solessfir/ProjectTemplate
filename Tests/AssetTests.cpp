@@ -5,6 +5,7 @@
 #include "Assets/AssetProvider.h"
 
 #include <array>
+#include <cstddef>
 #include <string>
 
 using ProjectTemplate::EAssetLoadError;
@@ -88,5 +89,14 @@ TEST_CASE("Roboto font sources are available through the loose asset provider")
 	REQUIRE(License);
 	CHECK(RegularFont->size() == 159108);
 	CHECK(MediumFont->size() == 159296);
-	CHECK(License->size() == 4487);
+
+	std::string LicenseText;
+	LicenseText.reserve(License->size());
+	for (const std::byte Byte : *License)
+	{
+		LicenseText.push_back(std::to_integer<char>(Byte));
+	}
+
+	CHECK(LicenseText.starts_with("Copyright 2011 The Roboto Project Authors"));
+	CHECK(LicenseText.contains("SIL OPEN FONT LICENSE Version 1.1"));
 }

@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [switch] $PrintPremakePath,
+    [switch] $PrintMSBuildPath,
     [switch] $PrintVisualStudioAction,
     [switch] $ValidateOnly,
     [ValidateSet('2022', '2026')]
@@ -251,6 +252,12 @@ if ($PrintPremakePath) {
 if ($PrintVisualStudioAction) {
     $Toolchain = Find-SupportedMSBuild -Version $VisualStudioVersion
     [Console]::Out.WriteLine("vs$($Toolchain.Version)")
+    exit 0
+}
+
+if ($PrintMSBuildPath) {
+    $Toolchain = Find-SupportedMSBuild -Version $VisualStudioVersion
+    Write-Output $Toolchain.Path
     exit 0
 }
 

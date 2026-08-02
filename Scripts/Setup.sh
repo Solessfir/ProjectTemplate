@@ -55,15 +55,39 @@ validate_premake() {
 }
 
 print_prerequisite_command() {
+    local selected_cxx="${cxx:-${CXX:-}}"
     if [[ -f /etc/os-release ]]; then source /etc/os-release; fi
     case "${ID:-}:${ID_LIKE:-}" in
-        *arch*) echo 'Install required packages with: sudo pacman -S --needed base-devel git curl pkgconf mesa libx11 libxrandr libxinerama libxcursor libxi libxkbcommon wayland' >&2 ;;
-        *ubuntu*)
-            echo 'Install required packages with: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 git make curl pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols' >&2
-            echo 'Then select GCC 14 with: export CC=gcc-14 CXX=g++-14' >&2
+        *arch*)
+            if [[ "${selected_cxx}" == *clang++* ]]; then
+                echo 'Install required packages with: sudo pacman -S --needed base-devel clang libc++ git curl pkgconf mesa libx11 libxrandr libxinerama libxcursor libxi libxkbcommon wayland' >&2
+            else
+                echo 'Install required packages with: sudo pacman -S --needed base-devel git curl pkgconf mesa libx11 libxrandr libxinerama libxcursor libxi libxkbcommon wayland' >&2
+            fi
             ;;
-        *debian*) echo 'Install required packages with: sudo apt-get update && sudo apt-get install -y build-essential git curl pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols' >&2 ;;
-        *fedora*|*rhel*) echo 'Install required packages with: sudo dnf install -y gcc-c++ git make curl pkgconf-pkg-config mesa-libGL-devel libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel libxkbcommon-devel wayland-devel wayland-protocols-devel' >&2 ;;
+        *ubuntu*)
+            if [[ "${selected_cxx}" == *clang++* ]]; then
+                echo 'Install required packages with: sudo apt-get update && sudo apt-get install -y clang libc++-dev libc++abi-dev git make curl pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols' >&2
+                echo 'Then select Clang with: export CC=clang CXX=clang++ CXXFLAGS=-stdlib=libc++ LDFLAGS=-stdlib=libc++' >&2
+            else
+                echo 'Install required packages with: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 git make curl pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols' >&2
+                echo 'Then select GCC 14 with: export CC=gcc-14 CXX=g++-14' >&2
+            fi
+            ;;
+        *debian*)
+            if [[ "${selected_cxx}" == *clang++* ]]; then
+                echo 'Install required packages with: sudo apt-get update && sudo apt-get install -y clang libc++-dev libc++abi-dev git make curl pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols' >&2
+            else
+                echo 'Install required packages with: sudo apt-get update && sudo apt-get install -y build-essential git curl pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols' >&2
+            fi
+            ;;
+        *fedora*|*rhel*)
+            if [[ "${selected_cxx}" == *clang++* ]]; then
+                echo 'Install required packages with: sudo dnf install -y clang libcxx-devel libcxxabi-devel git make curl pkgconf-pkg-config mesa-libGL-devel libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel libxkbcommon-devel wayland-devel wayland-protocols-devel' >&2
+            else
+                echo 'Install required packages with: sudo dnf install -y gcc-c++ git make curl pkgconf-pkg-config mesa-libGL-devel libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel libxkbcommon-devel wayland-devel wayland-protocols-devel' >&2
+            fi
+            ;;
         *) echo 'Install Git, Make, a C++23 compiler, curl, pkg-config, OpenGL, X11 extension, Wayland, and xkbcommon development packages.' >&2 ;;
     esac
 }
@@ -118,7 +142,11 @@ int main()
     return Value.value() == 42 ? 0 : 1;
 }
 EOF
-if ! "${cxx}" -std=c++23 -Wall -Wextra -Werror "${compiler_probe_directory}/Probe.cpp" -o "${compiler_probe_directory}/Probe" ||
+compiler_flags=()
+linker_flags=()
+if [[ -n "${CXXFLAGS:-}" ]]; then read -r -a compiler_flags <<< "${CXXFLAGS}"; fi
+if [[ -n "${LDFLAGS:-}" ]]; then read -r -a linker_flags <<< "${LDFLAGS}"; fi
+if ! "${cxx}" "${compiler_flags[@]}" -std=c++23 -Wall -Wextra -Werror "${compiler_probe_directory}/Probe.cpp" -o "${compiler_probe_directory}/Probe" "${linker_flags[@]}" ||
    ! "${compiler_probe_directory}/Probe" >/dev/null; then
     echo "Compiler '${cxx}' failed the required C++23 library probe for <expected> and <print>." >&2
     print_prerequisite_command

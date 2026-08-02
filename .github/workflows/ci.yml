@@ -46,12 +46,16 @@ jobs:
             configuration: Development
             cc: gcc-14
             cxx: g++-14
+            cxxflags: ""
+            ldflags: ""
           - name: Linux Clang Shipping
             runner: ubuntu-24.04
             platform: linux
             configuration: Shipping
             cc: clang
             cxx: clang++
+            cxxflags: -stdlib=libc++
+            ldflags: -stdlib=libc++
 
     steps:
       - name: Check out project
@@ -69,6 +73,9 @@ jobs:
           sudo apt-get install -y
           gcc-14
           g++-14
+          clang
+          libc++-dev
+          libc++abi-dev
           libgl1-mesa-dev
           libx11-dev
           libxrandr-dev
@@ -103,14 +110,23 @@ jobs:
 
       - name: Build project on Windows
         if: matrix.platform == 'windows'
-        shell: cmd
-        run: >-
-          msbuild ${{ matrix.solution }}
-          /m
-          /t:StarterApp,StarterTests
-          /p:Configuration=${{ matrix.configuration }}
-          /p:Platform=x64
-          /verbosity:minimal
+        shell: pwsh
+        run: |
+          $MSBuildPath = & .\Scripts\Setup.ps1 `
+            -PrintMSBuildPath `
+            -VisualStudioVersion ${{ matrix.visual_studio_version }}
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($MSBuildPath)) {
+            throw 'Could not resolve MSBuild for the selected Visual Studio toolchain.'
+          }
+
+          & $MSBuildPath `
+            '${{ matrix.solution }}' `
+            /m `
+            /t:StarterApp,StarterTests `
+            /p:Configuration=${{ matrix.configuration }} `
+            /p:Platform=x64 `
+            /verbosity:minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Run tests on Windows
         if: matrix.platform == 'windows'
@@ -123,11 +139,16 @@ jobs:
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
+          CXXFLAGS: ${{ matrix.cxxflags }}
+          LDFLAGS: ${{ matrix.ldflags }}
         run: bash ./Setup.sh
 
       - name: Generate GNU Make projects
         if: matrix.platform == 'linux'
         shell: bash
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
         run: bash ./GenerateProjectFiles.sh
 
       - name: Build project on Linux
@@ -136,11 +157,17 @@ jobs:
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
+          CXXFLAGS: ${{ matrix.cxxflags }}
+          LDFLAGS: ${{ matrix.ldflags }}
         run: |
           Configuration="${{ matrix.configuration }}"
           make --directory=Intermediate/ProjectFiles/gmake \
             --jobs=2 \
-            config="${Configuration,,}"
+            config="${Configuration,,}" \
+            CC="${CC}" \
+            CXX="${CXX}" \
+            CXXFLAGS="${CXXFLAGS}" \
+            LDFLAGS="${LDFLAGS}"
 
       - name: Run tests and X11 application smoke test on Linux
         if: matrix.platform == 'linux'
