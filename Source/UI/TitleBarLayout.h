@@ -17,6 +17,7 @@ enum class ETitleBarHitRegion
 	ResizeBottomLeft,
 	ResizeBottomRight,
 	SystemMenu,
+	ApplicationMenu,
 	MinimizeButton,
 	MaximizeButton,
 	CloseButton
@@ -122,6 +123,11 @@ struct FTitleBarLayout
 	if (X < Layout.TitleBarHeight)
 	{
 		return ETitleBarHitRegion::SystemMenu;
+	}
+
+	if (X < Layout.TitleBarHeight * 2)
+	{
+		return ETitleBarHitRegion::ApplicationMenu;
 	}
 
 	return ETitleBarHitRegion::Caption;

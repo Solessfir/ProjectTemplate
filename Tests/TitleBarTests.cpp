@@ -27,6 +27,8 @@ TEST_CASE("Title bar scales its native hit regions")
 	CHECK(HitTestTitleBar(Layout, 1100, 30, false) == ETitleBarHitRegion::MaximizeButton);
 	CHECK(HitTestTitleBar(Layout, 1030, 30, false) == ETitleBarHitRegion::MinimizeButton);
 	CHECK(HitTestTitleBar(Layout, 20, 30, false) == ETitleBarHitRegion::SystemMenu);
+	CHECK(HitTestTitleBar(Layout, 80, 30, false) == ETitleBarHitRegion::ApplicationMenu);
+	CHECK(HitTestTitleBar(Layout, 120, 30, false) == ETitleBarHitRegion::Caption);
 }
 
 TEST_CASE("Resize borders take priority over caption controls")

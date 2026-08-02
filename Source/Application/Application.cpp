@@ -304,6 +304,7 @@ void CursorEnterCallback(GLFWwindow* const Window, const int bEntered)
 	case ETitleBarHitRegion::ResizeBottomLeft: return GLFW_HIT_TEST_RESIZE_BOTTOM_LEFT;
 	case ETitleBarHitRegion::ResizeBottomRight: return GLFW_HIT_TEST_RESIZE_BOTTOM_RIGHT;
 	case ETitleBarHitRegion::SystemMenu: return GLFW_HIT_TEST_SYSTEM_MENU;
+	case ETitleBarHitRegion::ApplicationMenu: return GLFW_HIT_TEST_CLIENT;
 	case ETitleBarHitRegion::MinimizeButton: return GLFW_HIT_TEST_MINIMIZE_BUTTON;
 	case ETitleBarHitRegion::MaximizeButton: return GLFW_HIT_TEST_MAXIMIZE_BUTTON;
 	case ETitleBarHitRegion::CloseButton: return GLFW_HIT_TEST_CLOSE_BUTTON;
@@ -506,13 +507,92 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 	ImGui::PushFont(Fonts.Medium, 0.0f);
 	const ImVec2 TextSize = ImGui::CalcTextSize(ApplicationTitle);
 
-	DrawList.PushClipRect({ Height, 0.0f }, { Width - ButtonWidth * 3.0f, Height }, true);
+	DrawList.PushClipRect({ Height * 2.0f, 0.0f }, { Width - ButtonWidth * 3.0f, Height }, true);
 	DrawList.AddText(
-		{ Height + 10.0f * Scale, (Height - TextSize.y) * 0.5f },
+		{ Height * 2.0f + 10.0f * Scale, (Height - TextSize.y) * 0.5f },
 		State.bFocused ? Theme::Colors::TextPrimary : Theme::Colors::TextMuted,
 		ApplicationTitle);
 	DrawList.PopClipRect();
 	ImGui::PopFont();
+}
+
+void DrawApplicationMenu(GLFWwindow* const Window, const FTitleBarLayout& Layout, FUiState& State)
+{
+	const float Height = static_cast<float>(Layout.TitleBarHeight);
+	const float Scale = Height / 40.0f;
+	const ImVec2 ButtonPosition = { Height, 0.0f };
+	const ImVec2 ButtonSize = { Height, Height };
+
+	ImGui::SetNextWindowPos(ButtonPosition);
+	ImGui::SetNextWindowSize(ButtonSize);
+	ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	constexpr ImGuiWindowFlags HostFlags =
+		ImGuiWindowFlags_NoDecoration |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoDocking |
+		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		ImGuiWindowFlags_NoNavFocus |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse |
+		ImGuiWindowFlags_NoBackground;
+	ImGui::Begin("ApplicationMenuHost", nullptr, HostFlags);
+	ImGui::PopStyleVar(3);
+
+	if (ImGui::InvisibleButton("ApplicationMenuButton", ButtonSize))
+	{
+		ImGui::OpenPopup("ApplicationMenu");
+	}
+
+	ImDrawList& DrawList = *ImGui::GetWindowDrawList();
+	const ImVec2 ButtonMin = ImGui::GetItemRectMin();
+	const ImVec2 ButtonMax = ImGui::GetItemRectMax();
+	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+	{
+		DrawList.AddRectFilled(
+			ButtonMin,
+			ButtonMax,
+			Theme::Colors::TitleBarControlHover,
+			Theme::Rounding::TitleBarControlRounding * Scale);
+	}
+
+	const ImU32 GlyphColor = Theme::Colors::TextPrimary;
+	const float LineThickness = std::max(1.0f, Scale);
+	const float CenterX = (ButtonMin.x + ButtonMax.x) * 0.5f;
+	const float CenterY = (ButtonMin.y + ButtonMax.y) * 0.5f;
+	const float LineLeft = CenterX - 7.0f * Scale;
+	const float LineRight = CenterX + 7.0f * Scale;
+	for (const float Offset : { -5.0f, 0.0f, 5.0f })
+	{
+		const float Y = CenterY + Offset * Scale;
+		DrawList.AddLine({ LineLeft, Y }, { LineRight, Y }, GlyphColor, LineThickness);
+	}
+
+	ImGui::SetNextWindowPos({ ButtonPosition.x, Height }, ImGuiCond_Appearing);
+	if (ImGui::BeginPopup("ApplicationMenu"))
+	{
+		if (ImGui::MenuItem("Components"))
+		{
+			State.bShowDemoWindow = true;
+		}
+
+		if (ImGui::MenuItem("Licenses"))
+		{
+			State.bOpenLicenses = true;
+		}
+
+		ImGui::Separator();
+		if (ImGui::MenuItem("Exit"))
+		{
+			glfwSetWindowShouldClose(Window, GLFW_TRUE);
+		}
+		ImGui::EndPopup();
+	}
+
+	ImGui::End();
 }
 
 [[nodiscard]] bool DrawPrimaryButton(const char* const Label, const FApplicationFonts& Fonts)
@@ -988,6 +1068,7 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 	DrawApplicationBackground(Runtime.Ui);
 	DrawTitleBar(Runtime.Window, Runtime.Resources->Fonts);
 	DrawWorkspace(Runtime.Window.TitleBar, *Runtime.Resources, Runtime.Ui);
+	DrawApplicationMenu(Window, Runtime.Window.TitleBar, Runtime.Ui);
 
 	ImGui::Render();
 	int FramebufferWidth = 0;
