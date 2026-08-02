@@ -372,15 +372,16 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 	return ApplySaturation(ImGui::ColorConvertFloat4ToU32(State.BackgroundColor), State.BackgroundSaturation);
 }
 
-void DrawApplicationBackground(const FUiState& State)
+void DrawApplicationBackground(const FUiState& State, const bool bFocused)
 {
 	ImGuiViewport& Viewport = *ImGui::GetMainViewport();
 	const ImVec2 CanvasMin = Viewport.Pos;
 	const ImVec2 CanvasMax = { Viewport.Pos.x + Viewport.Size.x, Viewport.Pos.y + Viewport.Size.y };
 	const ImVec2 GradientMax = { CanvasMax.x, CanvasMin.y + Viewport.Size.y * State.GradientHeight };
-	const ImU32 SaturatedColor = ResolveBackgroundAccent(State);
-	const ImU32 TopLeft = MixColors(Theme::Colors::Canvas, SaturatedColor, State.BackgroundIntensity);
-	const ImU32 TopRight = MixColors(Theme::Colors::Canvas, SaturatedColor, State.BackgroundIntensity * Theme::Background::TrailingIntensityRatio);
+	const float FocusSaturation = bFocused ? State.BackgroundSaturation : State.BackgroundSaturation * Theme::Background::UnfocusedSaturationRatio;
+	const ImU32 GradientColor = ApplySaturation(ImGui::ColorConvertFloat4ToU32(State.BackgroundColor), FocusSaturation);
+	const ImU32 TopLeft = MixColors(Theme::Colors::Canvas, GradientColor, State.BackgroundIntensity);
+	const ImU32 TopRight = MixColors(Theme::Colors::Canvas, GradientColor, State.BackgroundIntensity * Theme::Background::TrailingIntensityRatio);
 	ImDrawList& DrawList = *ImGui::GetBackgroundDrawList(&Viewport);
 	DrawList.AddRectFilled(CanvasMin, CanvasMax, Theme::Colors::Canvas);
 	DrawList.AddRectFilledMultiColor(
@@ -1127,7 +1128,7 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 	ImGui::NewFrame();
 	Runtime.Window.bUiCapturesMouse = ImGui::GetIO().WantCaptureMouse;
 
-	DrawApplicationBackground(Runtime.Ui);
+	DrawApplicationBackground(Runtime.Ui, Runtime.Window.bFocused);
 	DrawTitleBar(Runtime.Window, Runtime.Resources->Fonts);
 	DrawWorkspace(Runtime.Window.TitleBar, *Runtime.Resources, Runtime.Ui, Runtime.OutputLog);
 	DrawApplicationMenu(Window, Runtime.Window.TitleBar, Runtime.Ui);

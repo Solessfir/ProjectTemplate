@@ -46,9 +46,10 @@ inline constexpr FPreset Presets[] = {
 inline constexpr int PresetCount = sizeof(Presets) / sizeof(Presets[0]);
 inline constexpr int DefaultPreset = 6;
 inline constexpr float DefaultGradientHeight = 0.50f;
-inline constexpr float DefaultSaturation = 1.0f;
+inline constexpr float DefaultSaturation = 0.8f;
 inline constexpr float DefaultIntensity = 0.15f;
 inline constexpr float TrailingIntensityRatio = 0.40f;
+inline constexpr float UnfocusedSaturationRatio = 0.6f;
 
 static_assert(DefaultPreset >= 0 && DefaultPreset < PresetCount);
 }
