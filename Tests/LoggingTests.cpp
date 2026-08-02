@@ -143,7 +143,7 @@ TEST_CASE("Concurrent log producers retain a strictly ordered bounded history")
 	constexpr std::size_t EntriesPerThread = 128;
 	constexpr std::size_t Capacity = 256;
 	FLogBuffer Buffer(Capacity);
-	std::vector<std::jthread> Threads;
+	std::vector<std::thread> Threads;
 	Threads.reserve(ThreadCount);
 
 	for (std::size_t ThreadIndex = 0; ThreadIndex < ThreadCount; ThreadIndex++)
@@ -156,7 +156,11 @@ TEST_CASE("Concurrent log producers retain a strictly ordered bounded history")
 			}
 		});
 	}
-	Threads.clear();
+
+	for (std::thread& Thread : Threads)
+	{
+		Thread.join();
+	}
 
 	const auto Batch = Buffer.Read({});
 	REQUIRE(Batch.Entries.size() == Capacity);
