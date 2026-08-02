@@ -636,7 +636,7 @@ void DrawWorkspaceIntro(FUiState& State, const FApplicationFonts& Fonts)
 
 	ImGui::PushFont(Fonts.Medium, 13.0f);
 	ImGui::PushStyleColor(ImGuiCol_Text, Theme::Colors::Accent);
-	ImGui::TextUnformatted("PROJECTTEMPLATE / NATIVE C++23");
+	ImGui::TextUnformatted("PROJECT TEMPLATE / NATIVE C++23");
 	ImGui::PopStyleColor();
 	ImGui::PopFont();
 	ImGui::Dummy({ 0.0f, 6.0f * InterfaceScale });
