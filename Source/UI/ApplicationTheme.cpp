@@ -50,7 +50,10 @@ void ApplyApplicationTheme(ImGuiStyle& Style)
 	Style.ScrollbarRounding = Rounding::Scrollbar;
 	Style.GrabMinSize = 10.0f;
 	Style.GrabRounding = Rounding::Grab;
+	Style.ImageRounding = Rounding::Image;
 	Style.TabRounding = Rounding::Tab;
+	Style.MenuItemRounding = Rounding::MenuItem;
+	Style.DragDropTargetRounding = Rounding::DragDropTarget;
 	Style.TabBorderSize = 0.0f;
 	Style.TabBarBorderSize = 1.0f;
 	Style.DockingSeparatorSize = 1.0f;

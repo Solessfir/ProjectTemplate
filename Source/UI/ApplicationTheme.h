@@ -47,7 +47,7 @@ inline constexpr int PresetCount = sizeof(Presets) / sizeof(Presets[0]);
 inline constexpr int DefaultPreset = 6;
 inline constexpr float DefaultGradientHeight = 0.50f;
 inline constexpr float DefaultSaturation = 1.0f;
-inline constexpr float DefaultIntensity = 0.18f;
+inline constexpr float DefaultIntensity = 0.15f;
 inline constexpr float TrailingIntensityRatio = 0.40f;
 
 static_assert(DefaultPreset >= 0 && DefaultPreset < PresetCount);
@@ -61,7 +61,10 @@ inline constexpr float Popup = 5.0f;
 inline constexpr float Frame = 4.0f;
 inline constexpr float Scrollbar = 5.0f;
 inline constexpr float Grab = 4.0f;
+inline constexpr float Image = 4.0f;
 inline constexpr float Tab = 4.0f;
+inline constexpr float MenuItem = 4.0f;
+inline constexpr float DragDropTarget = 4.0f;
 inline constexpr float PrimaryButton = 8.0f;
 inline constexpr float TitleBarControlRounding = 4.0f;
 }
