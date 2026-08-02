@@ -80,6 +80,17 @@ struct FUiState
 	bool bOpenLicenses = false;
 };
 
+struct FApplicationRuntime
+{
+	FWindowState Window;
+	FUiState Ui;
+	const FApplicationResources* Resources = nullptr;
+	ImGuiStyle BaseStyle;
+	float PreviousContentScale = 0.0f;
+	bool bRendererReady = false;
+	bool bRenderingFrame = false;
+};
+
 struct FPanelTransparencyOption
 {
 	EPanelTransparencyMode Mode;
@@ -185,9 +196,15 @@ void GlfwErrorCallback(const int Error, const char* const Description)
 	std::println(stderr, "GLFW error {}: {}", Error, Description);
 }
 
+[[nodiscard]] FApplicationRuntime* GetApplicationRuntime(GLFWwindow* const Window)
+{
+	return static_cast<FApplicationRuntime*>(glfwGetWindowUserPointer(Window));
+}
+
 [[nodiscard]] FWindowState* GetWindowState(GLFWwindow* const Window)
 {
-	return static_cast<FWindowState*>(glfwGetWindowUserPointer(Window));
+	FApplicationRuntime* const Runtime = GetApplicationRuntime(Window);
+	return Runtime == nullptr ? nullptr : &Runtime->Window;
 }
 
 void UpdateTitleBarScale(FWindowState& State, const float ContentScale)
@@ -898,6 +915,59 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 	DrawLicenseModal(State, Resources.RobotoLicense);
 }
 
+void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runtime)
+{
+	if (!Runtime.bRendererReady || Runtime.bRenderingFrame || glfwGetWindowAttrib(Window, GLFW_ICONIFIED) == GLFW_TRUE)
+	{
+		return;
+	}
+
+	// Refresh callbacks can arrive from GLFW calls made while rendering, so recursive frames must be ignored.
+	Runtime.bRenderingFrame = true;
+	const float ContentScale = Runtime.Window.UiScale;
+	if (std::abs(ContentScale - Runtime.PreviousContentScale) > 0.001f)
+	{
+		ImGui::GetStyle() = Runtime.BaseStyle;
+		ImGui::GetStyle().ScaleAllSizes(ContentScale);
+		glfwSetWindowSizeLimits(
+			Window,
+			ScaleTitleBarMetric(480, ContentScale),
+			ScaleTitleBarMetric(320, ContentScale),
+			GLFW_DONT_CARE,
+			GLFW_DONT_CARE);
+		Runtime.PreviousContentScale = ContentScale;
+	}
+	Theme::ApplyInteractiveColors(ImGui::GetStyle(), ResolveBackgroundAccent(Runtime.Ui));
+
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	Runtime.Window.bUiCapturesMouse = ImGui::GetIO().WantCaptureMouse;
+
+	DrawApplicationBackground(Runtime.Ui);
+	DrawTitleBar(Runtime.Window, Runtime.Resources->Fonts);
+	DrawWorkspace(Runtime.Window.TitleBar, *Runtime.Resources, Runtime.Ui);
+
+	ImGui::Render();
+	int FramebufferWidth = 0;
+	int FramebufferHeight = 0;
+	glfwGetFramebufferSize(Window, &FramebufferWidth, &FramebufferHeight);
+	glViewport(0, 0, FramebufferWidth, FramebufferHeight);
+	glClearColor(18.0f / 255.0f, 18.0f / 255.0f, 19.0f / 255.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	glfwSwapBuffers(Window);
+	Runtime.bRenderingFrame = false;
+}
+
+void WindowRefreshCallback(GLFWwindow* const Window)
+{
+	if (FApplicationRuntime* const Runtime = GetApplicationRuntime(Window))
+	{
+		RenderApplicationFrame(Window, *Runtime);
+	}
+}
+
 }
 
 int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
@@ -964,7 +1034,8 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 		glfwSetWindowPos(Window, InitialWindowPlacement.X, InitialWindowPlacement.Y);
 	}
 
-	FWindowState WindowState;
+	FApplicationRuntime Runtime;
+	FWindowState& WindowState = Runtime.Window;
 	WindowState.bWayland = glfwGetPlatform() == GLFW_PLATFORM_WAYLAND;
 	glfwGetWindowSize(
 		Window,
@@ -979,7 +1050,7 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 	glfwGetWindowContentScale(Window, nullptr, &InitialContentScale);
 	UpdateTitleBarScale(WindowState, InitialContentScale);
 
-	glfwSetWindowUserPointer(Window, &WindowState);
+	glfwSetWindowUserPointer(Window, &Runtime);
 	glfwSetWindowSizeCallback(Window, WindowSizeCallback);
 	glfwSetWindowContentScaleCallback(Window, WindowContentScaleCallback);
 	glfwSetWindowMaximizeCallback(Window, WindowMaximizeCallback);
@@ -1015,7 +1086,8 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 		return 1;
 	}
 
-	const ImGuiStyle BaseStyle = ImGui::GetStyle();
+	Runtime.BaseStyle = ImGui::GetStyle();
+	Runtime.Resources = &*Resources;
 
 	std::error_code DirectoryError;
 	std::filesystem::create_directories("Saved", DirectoryError);
@@ -1035,9 +1107,9 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 		return 1;
 	}
 
+	Runtime.bRendererReady = true;
+	glfwSetWindowRefreshCallback(Window, WindowRefreshCallback);
 	glfwShowWindow(Window);
-	FUiState UiState;
-	float PreviousContentScale = 0.0f;
 	int FrameCount = 0;
 	while (glfwWindowShouldClose(Window) == GLFW_FALSE)
 	{
@@ -1047,40 +1119,7 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 			continue;
 		}
 		glfwPollEvents();
-
-		const float ContentScale = WindowState.UiScale;
-		if (std::abs(ContentScale - PreviousContentScale) > 0.001f)
-		{
-			ImGui::GetStyle() = BaseStyle;
-			ImGui::GetStyle().ScaleAllSizes(ContentScale);
-			glfwSetWindowSizeLimits(
-				Window,
-				ScaleTitleBarMetric(480, ContentScale),
-				ScaleTitleBarMetric(320, ContentScale),
-				GLFW_DONT_CARE,
-				GLFW_DONT_CARE);
-			PreviousContentScale = ContentScale;
-		}
-		Theme::ApplyInteractiveColors(ImGui::GetStyle(), ResolveBackgroundAccent(UiState));
-
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		WindowState.bUiCapturesMouse = IO.WantCaptureMouse;
-
-		DrawApplicationBackground(UiState);
-		DrawTitleBar(WindowState, Resources->Fonts);
-		DrawWorkspace(WindowState.TitleBar, *Resources, UiState);
-
-		ImGui::Render();
-		int FramebufferWidth = 0;
-		int FramebufferHeight = 0;
-		glfwGetFramebufferSize(Window, &FramebufferWidth, &FramebufferHeight);
-		glViewport(0, 0, FramebufferWidth, FramebufferHeight);
-		glClearColor(18.0f / 255.0f, 18.0f / 255.0f, 19.0f / 255.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		glfwSwapBuffers(Window);
+		RenderApplicationFrame(Window, Runtime);
 
 		FrameCount++;
 		if (bSmokeTest && FrameCount >= 3)
@@ -1089,6 +1128,8 @@ int RunApplication(const bool bSmokeTest, const EWindowPlatform WindowPlatform)
 		}
 	}
 
+	Runtime.bRendererReady = false;
+	glfwSetWindowRefreshCallback(Window, nullptr);
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
