@@ -577,7 +577,8 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 		ImGuiInputTextFlags_CallbackCompletion |
 		ImGuiInputTextFlags_CallbackEdit |
 		ImGuiInputTextFlags_CallbackHistory;
-	const float SubmitButtonWidth = 72.0f;
+	constexpr char SubmitLabel[] = "Submit";
+	const float SubmitButtonWidth = ImGui::CalcTextSize(SubmitLabel).x + ImGui::GetStyle().FramePadding.x * 2.0f;
 	const float SubmitRightPadding = 8.0f * InterfaceScale;
 	ImGui::SetNextItemWidth(-(SubmitButtonWidth + SubmitRightPadding + ImGui::GetStyle().ItemSpacing.x));
 	if (ImGui::InputTextWithHint("##OutputLogCommand", "Enter command, or type help", CommandBuffer.data(), CommandBuffer.size(), CommandFlags, HistoryCallback, &CommandInputContext))
@@ -592,10 +593,12 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 		bReclaimCommandFocus = false;
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Submit", { SubmitButtonWidth, 0.0f }))
+	ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.5f, 0.5f });
+	if (ImGui::Button(SubmitLabel, { SubmitButtonWidth, 0.0f }))
 	{
 		SubmitCommand();
 	}
+	ImGui::PopStyleVar();
 
 	std::optional<std::string_view> ClickedSuggestion;
 	if (!CommandSuggestions.empty())
