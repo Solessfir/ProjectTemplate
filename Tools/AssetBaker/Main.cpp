@@ -1,5 +1,6 @@
 #include "AssetBake.h"
 
+#include <cstdio>
 #include <exception>
 #include <filesystem>
 #include <print>
@@ -78,11 +79,12 @@ int main(const int ArgumentCount, char** const Arguments) noexcept
 	}
 	catch (const std::exception& Error)
 	{
-		std::println(stderr, "Asset baking failed with an exception: {}", Error.what());
+		// Error reporting must not throw while the process boundary is already handling an exception.
+		(void)std::fprintf(stderr, "Asset baking failed with an exception: %s\n", Error.what());
 	}
 	catch (...)
 	{
-		std::println(stderr, "Asset baking failed with an unknown exception.");
+		(void)std::fputs("Asset baking failed with an unknown exception.\n", stderr);
 	}
 
 	return 1;
