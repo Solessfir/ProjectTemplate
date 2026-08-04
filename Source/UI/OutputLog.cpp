@@ -151,6 +151,8 @@ constexpr std::size_t MaximumCommandHistory = 64;
 [[nodiscard]] float MeasureTextPrefix(const std::string_view Text, const std::size_t ByteCount)
 {
 	const std::size_t ClampedByteCount = std::min(ByteCount, Text.size());
+	// ImGui receives an explicit end pointer, so this view does not need null termination.
+	// NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage)
 	return ImGui::CalcTextSize(Text.data(), Text.data() + ClampedByteCount, false).x;
 }
 
@@ -269,7 +271,7 @@ void FOutputLogPanel::ApplyCommandSuggestion(const std::string_view Suggestion)
 {
 	const std::size_t CopyLength = std::min(Suggestion.size(), CommandBuffer.size() - 1);
 	std::fill(CommandBuffer.begin(), CommandBuffer.end(), '\0');
-	std::copy_n(Suggestion.data(), CopyLength, CommandBuffer.data());
+	std::ranges::copy(Suggestion.substr(0, CopyLength), CommandBuffer.begin());
 	CommandSuggestions.clear();
 	CommandSuggestionIndex = -1;
 	bReclaimCommandFocus = true;
@@ -282,7 +284,7 @@ void FOutputLogPanel::RebuildCommandSuggestions(const std::span<const std::strin
 	{
 		if (IsCommandPrefix(Command, Input))
 		{
-			CommandSuggestions.push_back(Command);
+			CommandSuggestions.emplace_back(Command);
 		}
 	}
 
@@ -328,7 +330,7 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 		for (std::size_t LevelIndex = 0; LevelIndex < bLevelVisible.size(); LevelIndex++)
 		{
 			const ELogLevel Level = static_cast<ELogLevel>(LevelIndex);
-			if (ImGui::MenuItem(GetLogLevelName(Level).data(), nullptr, &bLevelVisible[LevelIndex]))
+			if (ImGui::MenuItem(GetLogLevelName(Level), nullptr, &bLevelVisible[LevelIndex]))
 			{
 				bFilterDirty = true;
 				TextSelection.Clear();
@@ -575,7 +577,7 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 	    ImGuiInputTextFlags_CallbackCompletion |
 	    ImGuiInputTextFlags_CallbackEdit |
 	    ImGuiInputTextFlags_CallbackHistory;
-	constexpr char SubmitLabel[] = "Submit";
+	constexpr const char* SubmitLabel = "Submit";
 	const float SubmitButtonWidth = ImGui::CalcTextSize(SubmitLabel).x + ImGui::GetStyle().FramePadding.x * 2.0f;
 	ImGui::SetNextItemWidth(-(SubmitButtonWidth + ImGui::GetStyle().ItemSpacing.x));
 	if (ImGui::InputTextWithHint("##OutputLogCommand", "Enter command, or type help", CommandBuffer.data(), CommandBuffer.size(), CommandFlags, HistoryCallback, &CommandInputContext))
@@ -597,7 +599,7 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 	}
 	ImGui::PopStyleVar();
 
-	std::optional<std::string_view> ClickedSuggestion;
+	std::optional<std::string> ClickedSuggestion;
 	if (!CommandSuggestions.empty())
 	{
 		const ImGuiViewport* const Viewport = ImGui::GetMainViewport();
@@ -620,9 +622,9 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 		{
 			for (std::size_t SuggestionIndex = 0; SuggestionIndex < CommandSuggestions.size(); SuggestionIndex++)
 			{
-				const std::string_view Suggestion = CommandSuggestions[SuggestionIndex];
+				const std::string& Suggestion = CommandSuggestions[SuggestionIndex];
 				ImGui::PushID(static_cast<int>(SuggestionIndex));
-				if (ImGui::Selectable(Suggestion.data(), CommandSuggestionIndex == static_cast<int>(SuggestionIndex)))
+				if (ImGui::Selectable(Suggestion.c_str(), CommandSuggestionIndex == static_cast<int>(SuggestionIndex)))
 				{
 					ClickedSuggestion = Suggestion;
 				}

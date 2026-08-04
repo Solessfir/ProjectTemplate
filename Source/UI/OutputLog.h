@@ -72,7 +72,7 @@ private:
 	std::vector<std::size_t> VisibleEntries;
 	std::vector<std::string> VisibleLines;
 	std::vector<std::string> CommandHistory;
-	std::vector<std::string_view> CommandSuggestions;
+	std::vector<std::string> CommandSuggestions;
 	std::array<char, 256> SearchBuffer = {};
 	std::array<char, 512> CommandBuffer = {};
 	std::array<bool, static_cast<std::size_t>(ELogLevel::Count)> bLevelVisible = {true, true, true, true, true};

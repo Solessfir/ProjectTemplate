@@ -1,5 +1,6 @@
 #include "AssetBake.h"
 
+#include <exception>
 #include <filesystem>
 #include <print>
 #include <string_view>
@@ -44,9 +45,8 @@ struct FArguments
 
 	return !OutArguments.ManifestPath.empty() && !OutArguments.AssetRoot.empty() && !OutArguments.OutputPath.empty();
 }
-}
 
-int main(const int ArgumentCount, char** const Arguments)
+[[nodiscard]] int RunAssetBaker(const int ArgumentCount, char** const Arguments)
 {
 	FArguments ParsedArguments;
 	if (!ParseArguments(ArgumentCount, Arguments, ParsedArguments))
@@ -67,4 +67,23 @@ int main(const int ArgumentCount, char** const Arguments)
 
 	std::println("Embedded assets generated: {}", ParsedArguments.OutputPath.string());
 	return 0;
+}
+}
+
+int main(const int ArgumentCount, char** const Arguments)
+{
+	try
+	{
+		return RunAssetBaker(ArgumentCount, Arguments);
+	}
+	catch (const std::exception& Error)
+	{
+		std::println(stderr, "Asset baking failed with an exception: {}", Error.what());
+	}
+	catch (...)
+	{
+		std::println(stderr, "Asset baking failed with an unknown exception.");
+	}
+
+	return 1;
 }

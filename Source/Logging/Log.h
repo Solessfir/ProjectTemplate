@@ -68,7 +68,7 @@ private:
 	std::uint64_t NextSequence = 1;
 };
 
-[[nodiscard]] constexpr std::string_view GetLogLevelName(const ELogLevel Level) noexcept
+[[nodiscard]] constexpr const char* GetLogLevelName(const ELogLevel Level) noexcept
 {
 	switch (Level)
 	{

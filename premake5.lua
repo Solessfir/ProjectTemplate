@@ -305,7 +305,10 @@ project "StarterApp"
     }
 
     includedirs {
-        Root .. "/Source",
+        Root .. "/Source"
+    }
+
+    externalincludedirs {
         External .. "/freetype/include",
         External .. "/glfw/include",
         External .. "/imgui"
@@ -381,7 +384,10 @@ project "StarterTests"
 
     includedirs {
         Root .. "/Source",
-        Root .. "/Tools/AssetBaker",
+        Root .. "/Tools/AssetBaker"
+    }
+
+    externalincludedirs {
         External .. "/doctest"
     }
 

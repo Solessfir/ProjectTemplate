@@ -72,7 +72,7 @@ struct FApplicationResources
 
 struct FUiState
 {
-	char ApplicationName[64] = "Native App";
+	char ApplicationName[64] = "Native App"; // NOLINT(modernize-avoid-c-arrays) ImGui edits this fixed C buffer in place.
 	ImVec4 BackgroundColor = ImGui::ColorConvertU32ToFloat4(Theme::Background::Presets[Theme::Background::DefaultPreset].Color);
 	float GradientHeight = Theme::Background::DefaultGradientHeight;
 	float BackgroundSaturation = Theme::Background::DefaultSaturation;
@@ -105,11 +105,11 @@ struct FPanelTransparencyOption
 	const char* Label;
 };
 
-constexpr FPanelTransparencyOption PanelTransparencyOptions[] = {
-    {EPanelTransparencyMode::All, "All panels"},
-    {EPanelTransparencyMode::FloatingOnly, "Floating panels only"},
-    {EPanelTransparencyMode::DockedOnly, "Docked panels only"},
-    {EPanelTransparencyMode::Disabled, "Disabled"}};
+constexpr std::array PanelTransparencyOptions = {
+    FPanelTransparencyOption{EPanelTransparencyMode::All, "All panels"},
+    FPanelTransparencyOption{EPanelTransparencyMode::FloatingOnly, "Floating panels only"},
+    FPanelTransparencyOption{EPanelTransparencyMode::DockedOnly, "Docked panels only"},
+    FPanelTransparencyOption{EPanelTransparencyMode::Disabled, "Disabled"}};
 
 [[nodiscard]] constexpr const char* GetPanelTransparencyLabel(const EPanelTransparencyMode Mode) noexcept
 {
@@ -727,19 +727,25 @@ void DrawBuildProfileCard(const FApplicationFonts& Fonts)
 	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, {0.0f, 3.0f * InterfaceScale});
 	if (ImGui::BeginTable("BuildProfile", 2, ImGuiTableFlags_SizingStretchProp))
 	{
-		constexpr const char* Rows[][2] = {
-		    {"Language", "C++23"},
-		    {"Window", "GLFW native title bar"},
-		    {"Interface", "Dear ImGui docking"},
-		    {"Shipping", "Embedded assets"}};
+		struct FBuildProfileRow
+		{
+			const char* Name;
+			const char* Value;
+		};
+
+		constexpr std::array Rows = {
+		    FBuildProfileRow{"Language", "C++23"},
+		    FBuildProfileRow{"Window", "GLFW native title bar"},
+		    FBuildProfileRow{"Interface", "Dear ImGui docking"},
+		    FBuildProfileRow{"Shipping", "Embedded assets"}};
 
 		for (const auto& Row : Rows)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
-			ImGui::TextDisabled("%s", Row[0]);
+			ImGui::TextDisabled("%s", Row.Name);
 			ImGui::TableNextColumn();
-			ImGui::TextWrapped("%s", Row[1]);
+			ImGui::TextWrapped("%s", Row.Value);
 		}
 		ImGui::EndTable();
 	}
@@ -835,7 +841,7 @@ void DrawAppearanceCard(FUiState& State, const FApplicationFonts& Fonts)
 		{
 			const Theme::Background::FPreset& Preset = Theme::Background::Presets[PresetIndex];
 			const bool bSelected = PresetIndex == State.BackgroundPreset;
-			char Label[64] = {};
+			char Label[64] = {}; // NOLINT(modernize-avoid-c-arrays) ImGui requires a stable null-terminated label.
 			const int WrittenLength = std::snprintf(Label, sizeof(Label), bSelected ? "%s (Current)" : "%s", Preset.Name);
 			if (WrittenLength < 0)
 			{
