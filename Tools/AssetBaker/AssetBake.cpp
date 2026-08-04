@@ -38,20 +38,20 @@ namespace
 	std::ifstream Stream(Path, std::ios::binary | std::ios::ate);
 	if (!Stream)
 	{
-		return std::unexpected(FError{ "Could not open manifest: " + Path.string() });
+		return std::unexpected(FError{"Could not open manifest: " + Path.string()});
 	}
 
 	const std::streampos EndPosition = Stream.tellg();
 	if (EndPosition < 0)
 	{
-		return std::unexpected(FError{ "Could not determine manifest size: " + Path.string() });
+		return std::unexpected(FError{"Could not determine manifest size: " + Path.string()});
 	}
 
 	std::string Text(static_cast<std::size_t>(EndPosition), '\0');
 	Stream.seekg(0, std::ios::beg);
 	if (!Text.empty() && !Stream.read(Text.data(), static_cast<std::streamsize>(Text.size())))
 	{
-		return std::unexpected(FError{ "Could not read manifest: " + Path.string() });
+		return std::unexpected(FError{"Could not read manifest: " + Path.string()});
 	}
 
 	return Text;
@@ -62,20 +62,20 @@ namespace
 	std::ifstream Stream(Path, std::ios::binary | std::ios::ate);
 	if (!Stream)
 	{
-		return std::unexpected(FError{ "Could not open asset: " + Path.string() });
+		return std::unexpected(FError{"Could not open asset: " + Path.string()});
 	}
 
 	const std::streampos EndPosition = Stream.tellg();
 	if (EndPosition < 0)
 	{
-		return std::unexpected(FError{ "Could not determine asset size: " + Path.string() });
+		return std::unexpected(FError{"Could not determine asset size: " + Path.string()});
 	}
 
 	std::vector<char> Bytes(static_cast<std::size_t>(EndPosition));
 	Stream.seekg(0, std::ios::beg);
 	if (!Bytes.empty() && !Stream.read(Bytes.data(), static_cast<std::streamsize>(Bytes.size())))
 	{
-		return std::unexpected(FError{ "Could not read asset: " + Path.string() });
+		return std::unexpected(FError{"Could not read asset: " + Path.string()});
 	}
 
 	return Bytes;
@@ -99,7 +99,7 @@ namespace
 [[nodiscard]] std::expected<void, FError> WriteFileIfChanged(const std::filesystem::path& OutputPath, const std::string_view Contents)
 {
 	if (const std::expected<std::string, FError> ExistingContents = ReadTextFile(OutputPath);
-		ExistingContents && *ExistingContents == Contents)
+	    ExistingContents && *ExistingContents == Contents)
 	{
 		return {};
 	}
@@ -111,7 +111,7 @@ namespace
 		std::filesystem::create_directories(ParentPath, Error);
 		if (Error)
 		{
-			return std::unexpected(FError{ "Could not create generated asset directory: " + Error.message() });
+			return std::unexpected(FError{"Could not create generated asset directory: " + Error.message()});
 		}
 	}
 
@@ -122,7 +122,7 @@ namespace
 		if (!Stream || !Stream.write(Contents.data(), static_cast<std::streamsize>(Contents.size())))
 		{
 			std::filesystem::remove(TemporaryPath, Error);
-			return std::unexpected(FError{ "Could not write generated asset source: " + TemporaryPath.string() });
+			return std::unexpected(FError{"Could not write generated asset source: " + TemporaryPath.string()});
 		}
 	}
 
@@ -132,7 +132,7 @@ namespace
 	if (Error)
 	{
 		std::filesystem::remove(TemporaryPath, Error);
-		return std::unexpected(FError{ "Could not install generated asset source: " + OutputPath.string() });
+		return std::unexpected(FError{"Could not install generated asset source: " + OutputPath.string()});
 	}
 
 	return {};
@@ -150,8 +150,8 @@ std::expected<std::vector<std::string>, FError> ParseManifest(const std::string_
 	{
 		const std::size_t LineEnd = ManifestText.find('\n', LineStart);
 		const std::string_view Line = Trim(ManifestText.substr(
-			LineStart,
-			LineEnd == std::string_view::npos ? ManifestText.size() - LineStart : LineEnd - LineStart));
+		    LineStart,
+		    LineEnd == std::string_view::npos ? ManifestText.size() - LineStart : LineEnd - LineStart));
 
 		if (!Line.empty() && !Line.starts_with('#'))
 		{
@@ -159,13 +159,12 @@ std::expected<std::vector<std::string>, FError> ParseManifest(const std::string_
 			if (!NormalizedPath)
 			{
 				return std::unexpected(FError{
-					"Invalid asset path on manifest line " + std::to_string(LineNumber) + ": " + std::string(Line)
-				});
+				    "Invalid asset path on manifest line " + std::to_string(LineNumber) + ": " + std::string(Line)});
 			}
 
 			if (!UniquePaths.emplace(*NormalizedPath).second)
 			{
-				return std::unexpected(FError{ "Duplicate asset path in manifest: " + *NormalizedPath });
+				return std::unexpected(FError{"Duplicate asset path in manifest: " + *NormalizedPath});
 			}
 			Paths.push_back(*NormalizedPath);
 		}
@@ -192,31 +191,31 @@ std::expected<std::string, FError> GenerateSource(const std::span<const FAsset> 
 		const std::optional<std::string> NormalizedPath = NormalizeVirtualAssetPath(Asset.VirtualPath);
 		if (!NormalizedPath || *NormalizedPath != Asset.VirtualPath)
 		{
-			return std::unexpected(FError{ "Asset path is not normalized: " + Asset.VirtualPath });
+			return std::unexpected(FError{"Asset path is not normalized: " + Asset.VirtualPath});
 		}
 
 		if (!UniquePaths.emplace(Asset.VirtualPath).second)
 		{
-			return std::unexpected(FError{ "Duplicate asset path: " + Asset.VirtualPath });
+			return std::unexpected(FError{"Duplicate asset path: " + Asset.VirtualPath});
 		}
 		SortedAssets.push_back(&Asset);
 	}
 
 	std::ranges::sort(SortedAssets, {}, [](const FAsset* const Asset)
-	{
-		return Asset->VirtualPath;
-	});
+	                  {
+		                  return Asset->VirtualPath;
+	                  });
 
 	std::ostringstream Source;
 	Source.imbue(std::locale::classic());
 	Source << "// Generated by AssetBaker. Do not edit.\n"
-		<< "#include \"Assets/EmbeddedAssets.h\"\n\n"
-		<< "#include <array>\n"
-		<< "#include <cstdint>\n\n"
-		<< "namespace ProjectTemplate::Private\n"
-		<< "{\n"
-		<< "namespace\n"
-		<< "{\n";
+	       << "#include \"Assets/EmbeddedAssets.h\"\n\n"
+	       << "#include <array>\n"
+	       << "#include <cstdint>\n\n"
+	       << "namespace ProjectTemplate::Private\n"
+	       << "{\n"
+	       << "namespace\n"
+	       << "{\n";
 
 	for (std::size_t AssetIndex = 0; AssetIndex < SortedAssets.size(); AssetIndex++)
 	{
@@ -230,7 +229,7 @@ std::expected<std::string, FError> GenerateSource(const std::span<const FAsset> 
 			}
 			const auto Byte = static_cast<std::uint8_t>(static_cast<unsigned char>(Asset.Bytes[ByteIndex]));
 			Source << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned int>(Byte)
-				<< std::dec;
+			       << std::dec;
 			if (ByteIndex + 1 < Asset.Bytes.size())
 			{
 				Source << ", ";
@@ -245,19 +244,19 @@ std::expected<std::string, FError> GenerateSource(const std::span<const FAsset> 
 	}
 
 	Source << "}\n\n"
-		<< "std::optional<std::span<const std::byte>> FindEmbeddedAsset(const std::string_view VirtualPath) noexcept\n"
-		<< "{\n"
-		<< "\t(void)VirtualPath;\n";
+	       << "std::optional<std::span<const std::byte>> FindEmbeddedAsset(const std::string_view VirtualPath) noexcept\n"
+	       << "{\n"
+	       << "\t(void)VirtualPath;\n";
 	for (std::size_t AssetIndex = 0; AssetIndex < SortedAssets.size(); AssetIndex++)
 	{
 		Source << "\tif (VirtualPath == \"" << EscapeStringLiteral(SortedAssets[AssetIndex]->VirtualPath) << "\")\n"
-			<< "\t{\n"
-			<< "\t\treturn std::as_bytes(std::span(Asset" << AssetIndex << "));\n"
-			<< "\t}\n";
+		       << "\t{\n"
+		       << "\t\treturn std::as_bytes(std::span(Asset" << AssetIndex << "));\n"
+		       << "\t}\n";
 	}
 	Source << "\n\treturn std::nullopt;\n"
-		<< "}\n"
-		<< "}\n";
+	       << "}\n"
+	       << "}\n";
 
 	return Source.str();
 }
@@ -285,7 +284,7 @@ std::expected<void, FError> Bake(const std::filesystem::path& ManifestPath, cons
 		{
 			return std::unexpected(Bytes.error());
 		}
-		Assets.push_back(FAsset{ .VirtualPath = VirtualPath, .Bytes = std::move(*Bytes) });
+		Assets.push_back(FAsset{.VirtualPath = VirtualPath, .Bytes = std::move(*Bytes)});
 	}
 
 	const std::expected<std::string, FError> GeneratedSource = GenerateSource(Assets);

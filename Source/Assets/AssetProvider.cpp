@@ -3,7 +3,7 @@
 #include "Assets/AssetPath.h"
 
 #ifdef PROJECTTEMPLATE_EMBEDDED_ASSETS
-#include "Assets/EmbeddedAssets.h"
+	#include "Assets/EmbeddedAssets.h"
 #endif
 
 #include <fstream>
@@ -12,7 +12,7 @@
 namespace ProjectTemplate
 {
 FAssetProvider::FAssetProvider(std::filesystem::path AssetRoot)
-	: AssetRoot(std::move(AssetRoot))
+    : AssetRoot(std::move(AssetRoot))
 {
 }
 
@@ -22,9 +22,8 @@ std::expected<std::span<const std::byte>, FAssetLoadError> FAssetProvider::Load(
 	if (!NormalizedPath)
 	{
 		return std::unexpected(FAssetLoadError{
-			.Code = EAssetLoadError::InvalidPath,
-			.Message = "Invalid virtual asset path: " + std::string(VirtualPath)
-		});
+		    .Code = EAssetLoadError::InvalidPath,
+		    .Message = "Invalid virtual asset path: " + std::string(VirtualPath)});
 	}
 
 #ifdef PROJECTTEMPLATE_EMBEDDED_ASSETS
@@ -32,9 +31,8 @@ std::expected<std::span<const std::byte>, FAssetLoadError> FAssetProvider::Load(
 	if (!Asset)
 	{
 		return std::unexpected(FAssetLoadError{
-			.Code = EAssetLoadError::NotFound,
-			.Message = "Embedded asset was not found: " + *NormalizedPath
-		});
+		    .Code = EAssetLoadError::NotFound,
+		    .Message = "Embedded asset was not found: " + *NormalizedPath});
 	}
 
 	return *Asset;
@@ -49,18 +47,16 @@ std::expected<std::span<const std::byte>, FAssetLoadError> FAssetProvider::Load(
 	if (!Stream)
 	{
 		return std::unexpected(FAssetLoadError{
-			.Code = EAssetLoadError::NotFound,
-			.Message = "Loose asset was not found: " + SourcePath.string()
-		});
+		    .Code = EAssetLoadError::NotFound,
+		    .Message = "Loose asset was not found: " + SourcePath.string()});
 	}
 
 	const std::streampos EndPosition = Stream.tellg();
 	if (EndPosition < 0)
 	{
 		return std::unexpected(FAssetLoadError{
-			.Code = EAssetLoadError::ReadFailed,
-			.Message = "Could not determine asset size: " + SourcePath.string()
-		});
+		    .Code = EAssetLoadError::ReadFailed,
+		    .Message = "Could not determine asset size: " + SourcePath.string()});
 	}
 
 	std::vector<char> Bytes(EndPosition);
@@ -68,18 +64,16 @@ std::expected<std::span<const std::byte>, FAssetLoadError> FAssetProvider::Load(
 	if (!Bytes.empty() && !Stream.read(Bytes.data(), static_cast<std::streamsize>(Bytes.size())))
 	{
 		return std::unexpected(FAssetLoadError{
-			.Code = EAssetLoadError::ReadFailed,
-			.Message = "Could not read loose asset: " + SourcePath.string()
-		});
+		    .Code = EAssetLoadError::ReadFailed,
+		    .Message = "Could not read loose asset: " + SourcePath.string()});
 	}
 
 	auto [Iterator, bInserted] = LooseAssetCache.emplace(*NormalizedPath, std::move(Bytes));
 	if (!bInserted)
 	{
 		return std::unexpected(FAssetLoadError{
-			.Code = EAssetLoadError::ReadFailed,
-			.Message = "Could not cache loose asset: " + *NormalizedPath
-		});
+		    .Code = EAssetLoadError::ReadFailed,
+		    .Message = "Could not cache loose asset: " + *NormalizedPath});
 	}
 
 	return std::as_bytes(std::span(Iterator->second));

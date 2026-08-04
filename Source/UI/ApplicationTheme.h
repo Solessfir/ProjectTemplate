@@ -32,16 +32,15 @@ struct FPreset
 };
 
 inline constexpr FPreset Presets[] = {
-	{ "Amber", IM_COL32(232, 139, 118, 255) },
-	{ "Rust", IM_COL32(205, 148, 30, 255) },
-	{ "Olive", IM_COL32(143, 179, 87, 255) },
-	{ "Grass", IM_COL32(77, 177, 122, 255) },
-	{ "Ocean", IM_COL32(46, 169, 183, 255) },
-	{ "Sky", IM_COL32(67, 164, 210, 255) },
-	{ "Cobalt", IM_COL32(84, 108, 232, 255) },
-	{ "Violet", IM_COL32(147, 80, 220, 255) },
-	{ "Plum", IM_COL32(194, 83, 177, 255) }
-};
+    {"Amber", IM_COL32(232, 139, 118, 255)},
+    {"Rust", IM_COL32(205, 148, 30, 255)},
+    {"Olive", IM_COL32(143, 179, 87, 255)},
+    {"Grass", IM_COL32(77, 177, 122, 255)},
+    {"Ocean", IM_COL32(46, 169, 183, 255)},
+    {"Sky", IM_COL32(67, 164, 210, 255)},
+    {"Cobalt", IM_COL32(84, 108, 232, 255)},
+    {"Violet", IM_COL32(147, 80, 220, 255)},
+    {"Plum", IM_COL32(194, 83, 177, 255)}};
 
 inline constexpr int PresetCount = sizeof(Presets) / sizeof(Presets[0]);
 inline constexpr int DefaultPreset = 6;

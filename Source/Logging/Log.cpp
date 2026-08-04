@@ -5,7 +5,7 @@
 #include <print>
 
 #ifdef _WIN32
-#include <io.h>
+	#include <io.h>
 #endif
 
 namespace ProjectTemplate
@@ -24,7 +24,7 @@ namespace
 }
 
 FLogBuffer::FLogBuffer(const std::size_t InCapacity)
-	: Capacity(std::max<std::size_t>(1, InCapacity))
+    : Capacity(std::max<std::size_t>(1, InCapacity))
 {
 }
 
@@ -52,7 +52,7 @@ FLogReadResult FLogBuffer::Read(const FLogCursor Cursor) const
 {
 	const std::scoped_lock Lock(Mutex);
 	FLogReadResult Result;
-	Result.Cursor = { Generation, NextSequence };
+	Result.Cursor = {Generation, NextSequence};
 	Result.bReset = Cursor.Generation != Generation;
 
 	if (Result.bReset)
@@ -75,13 +75,13 @@ FLogReadResult FLogBuffer::Read(const FLogCursor Cursor) const
 	}
 
 	const auto FirstUnreadEntry = std::lower_bound(
-		Entries.begin(),
-		Entries.end(),
-		Cursor.NextSequence,
-		[](const FLogEntry& Entry, const std::uint64_t Sequence)
-		{
-			return Entry.Sequence < Sequence;
-		});
+	    Entries.begin(),
+	    Entries.end(),
+	    Cursor.NextSequence,
+	    [](const FLogEntry& Entry, const std::uint64_t Sequence)
+	    {
+		    return Entry.Sequence < Sequence;
+	    });
 	Result.Entries.assign(FirstUnreadEntry, Entries.end());
 	return Result;
 }

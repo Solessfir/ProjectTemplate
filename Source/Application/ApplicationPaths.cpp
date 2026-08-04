@@ -50,10 +50,9 @@ namespace
 [[nodiscard]] FApplicationPaths MakeApplicationPaths(const std::filesystem::path& RootDirectory)
 {
 	return FApplicationPaths{
-		.RootDirectory = RootDirectory,
-		.AssetDirectory = RootDirectory / "Assets",
-		.SavedDirectory = RootDirectory / "Saved"
-	};
+	    .RootDirectory = RootDirectory,
+	    .AssetDirectory = RootDirectory / "Assets",
+	    .SavedDirectory = RootDirectory / "Saved"};
 }
 }
 

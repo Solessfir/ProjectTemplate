@@ -32,19 +32,19 @@ namespace
 void ApplyApplicationTheme(ImGuiStyle& Style)
 {
 	Style.FontSizeBase = 15.0f;
-	Style.WindowPadding = { 12.0f, 12.0f };
+	Style.WindowPadding = {12.0f, 12.0f};
 	Style.WindowRounding = Rounding::Window;
 	Style.WindowBorderSize = 1.0f;
 	Style.ChildRounding = Rounding::Child;
 	Style.ChildBorderSize = 1.0f;
 	Style.PopupRounding = Rounding::Popup;
 	Style.PopupBorderSize = 1.0f;
-	Style.FramePadding = { 12.0f, 8.0f };
+	Style.FramePadding = {12.0f, 8.0f};
 	Style.FrameRounding = Rounding::Frame;
 	Style.FrameBorderSize = 1.0f;
-	Style.ItemSpacing = { 8.0f, 8.0f };
-	Style.ItemInnerSpacing = { 8.0f, 6.0f };
-	Style.CellPadding = { 10.0f, 8.0f };
+	Style.ItemSpacing = {8.0f, 8.0f};
+	Style.ItemInnerSpacing = {8.0f, 6.0f};
+	Style.CellPadding = {10.0f, 8.0f};
 	Style.IndentSpacing = 20.0f;
 	Style.ScrollbarSize = 12.0f;
 	Style.ScrollbarRounding = Rounding::Scrollbar;

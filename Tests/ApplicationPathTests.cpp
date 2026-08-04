@@ -1,8 +1,7 @@
-#include <doctest/doctest.h>
-
 #include "Application/ApplicationPaths.h"
 
 #include <chrono>
+#include <doctest/doctest.h>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -14,7 +13,7 @@ class FTemporaryDirectory
 {
 public:
 	explicit FTemporaryDirectory(std::filesystem::path Path)
-		: Path(std::move(Path))
+	    : Path(std::move(Path))
 	{
 	}
 

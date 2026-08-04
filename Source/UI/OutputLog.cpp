@@ -2,13 +2,12 @@
 
 #include "UI/ApplicationTheme.h"
 
-#include <imgui.h>
-
 #include <algorithm>
 #include <array>
 #include <cctype>
 #include <cstdint>
 #include <format>
+#include <imgui.h>
 #include <iterator>
 #include <string_view>
 
@@ -17,19 +16,18 @@ namespace ProjectTemplate
 namespace
 {
 constexpr std::array CategoryColors = {
-	IM_COL32(126, 200, 255, 255),
-	IM_COL32(142, 220, 182, 255),
-	IM_COL32(244, 202, 128, 255),
-	IM_COL32(203, 166, 255, 255),
-	IM_COL32(255, 157, 170, 255),
-	IM_COL32(115, 218, 224, 255),
-	IM_COL32(192, 215, 128, 255),
-	IM_COL32(240, 166, 219, 255),
-	IM_COL32(166, 184, 255, 255),
-	IM_COL32(235, 186, 151, 255),
-	IM_COL32(135, 210, 154, 255),
-	IM_COL32(225, 168, 255, 255)
-};
+    IM_COL32(126, 200, 255, 255),
+    IM_COL32(142, 220, 182, 255),
+    IM_COL32(244, 202, 128, 255),
+    IM_COL32(203, 166, 255, 255),
+    IM_COL32(255, 157, 170, 255),
+    IM_COL32(115, 218, 224, 255),
+    IM_COL32(192, 215, 128, 255),
+    IM_COL32(240, 166, 219, 255),
+    IM_COL32(166, 184, 255, 255),
+    IM_COL32(235, 186, 151, 255),
+    IM_COL32(135, 210, 154, 255),
+    IM_COL32(225, 168, 255, 255)};
 constexpr std::size_t MaximumCommandHistory = 64;
 
 [[nodiscard]] constexpr char FoldAscii(const char Character) noexcept
@@ -45,21 +43,21 @@ constexpr std::size_t MaximumCommandHistory = 64;
 	}
 
 	return std::search(
-		Text.begin(),
-		Text.end(),
-		Search.begin(),
-		Search.end(),
-		[](const char Left, const char Right)
-		{
-			return FoldAscii(Left) == FoldAscii(Right);
-		}) != Text.end();
+	           Text.begin(),
+	           Text.end(),
+	           Search.begin(),
+	           Search.end(),
+	           [](const char Left, const char Right)
+	           {
+		           return FoldAscii(Left) == FoldAscii(Right);
+	           }) != Text.end();
 }
 
 [[nodiscard]] bool MatchesSearch(const FLogEntry& Entry, const std::string_view Search)
 {
 	return ContainsCaseInsensitive(Entry.Category, Search) ||
-		ContainsCaseInsensitive(Entry.Message, Search) ||
-		ContainsCaseInsensitive(GetLogLevelName(Entry.Level), Search);
+	       ContainsCaseInsensitive(Entry.Message, Search) ||
+	       ContainsCaseInsensitive(GetLogLevelName(Entry.Level), Search);
 }
 
 [[nodiscard]] ImU32 ResolveCategoryColor(const std::string_view Category)
@@ -71,18 +69,18 @@ constexpr std::size_t MaximumCommandHistory = 64;
 {
 	switch (Level)
 	{
-	case ELogLevel::Trace:
-		return Theme::Colors::TextMuted;
-	case ELogLevel::Debug:
-		return Theme::Colors::TextSecondary;
-	case ELogLevel::Info:
-		return Theme::Colors::TextPrimary;
-	case ELogLevel::Warning:
-		return IM_COL32(246, 196, 101, 255);
-	case ELogLevel::Error:
-		return IM_COL32(255, 125, 125, 255);
-	case ELogLevel::Count:
-		break;
+		case ELogLevel::Trace:
+			return Theme::Colors::TextMuted;
+		case ELogLevel::Debug:
+			return Theme::Colors::TextSecondary;
+		case ELogLevel::Info:
+			return Theme::Colors::TextPrimary;
+		case ELogLevel::Warning:
+			return IM_COL32(246, 196, 101, 255);
+		case ELogLevel::Error:
+			return IM_COL32(255, 125, 125, 255);
+		case ELogLevel::Count:
+			break;
 	}
 
 	return Theme::Colors::TextPrimary;
@@ -195,7 +193,7 @@ constexpr std::size_t MaximumCommandHistory = 64;
 	}
 
 	const float LocalX = MousePosition.x - TextOrigin.x;
-	return { LineIndex, FindByteAtX(Lines[LineIndex], LocalX) };
+	return {LineIndex, FindByteAtX(Lines[LineIndex], LocalX)};
 }
 }
 
@@ -219,9 +217,9 @@ bool FOutputLogPanel::Synchronize(FLogBuffer& Buffer)
 	}
 
 	Entries.insert(
-		Entries.end(),
-		std::make_move_iterator(Result.Entries.begin()),
-		std::make_move_iterator(Result.Entries.end()));
+	    Entries.end(),
+	    std::make_move_iterator(Result.Entries.begin()),
+	    std::make_move_iterator(Result.Entries.end()));
 	if (Entries.size() > Buffer.GetCapacity())
 	{
 		const std::size_t RemoveCount = Entries.size() - Buffer.GetCapacity();
@@ -301,7 +299,7 @@ void FOutputLogPanel::RebuildCommandSuggestions(const std::span<const std::strin
 std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const bOpen, bool& bDocked, const std::span<const std::string_view> Commands)
 {
 	const bool bReceivedEntries = !bPaused && Synchronize(Buffer);
-	ImGui::SetNextWindowSize({ 900.0f, 320.0f }, ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize({900.0f, 320.0f}, ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Output Log", bOpen))
 	{
 		bDocked = ImGui::IsWindowDocked();
@@ -373,8 +371,8 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 
 	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
 	const float FooterHeight = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 8.0f * InterfaceScale, 4.0f * InterfaceScale });
-	if (ImGui::BeginChild("OutputLogEntries", { 0.0f, -FooterHeight }, ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_HorizontalScrollbar))
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {8.0f * InterfaceScale, 4.0f * InterfaceScale});
+	if (ImGui::BeginChild("OutputLogEntries", {0.0f, -FooterHeight}, ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_HorizontalScrollbar))
 	{
 		const bool bWasAtBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f;
 		const bool bShouldScrollToBottom = !VisibleEntries.empty() && ShouldScrollOutputLog(bReceivedEntries, bAutoScroll, bWasAtBottom, bScrollToBottom);
@@ -389,7 +387,7 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 
 		const float ContentHeight = std::max(AvailableSize.y, static_cast<float>(VisibleLines.size()) * LineHeight);
 		const ImVec2 TextOrigin = ImGui::GetCursorScreenPos();
-		(void)ImGui::InvisibleButton("##OutputLogText", { ContentWidth, ContentHeight }, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_EnableNav);
+		(void)ImGui::InvisibleButton("##OutputLogText", {ContentWidth, ContentHeight}, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_EnableNav);
 		if (ImGui::IsItemActivated())
 		{
 			TextSelection.Begin(HitTestText(VisibleLines, TextOrigin, LineHeight, ImGui::GetMousePos()), ImGui::GetIO().KeyShift);
@@ -452,14 +450,14 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 					SelectionEndX += ImGui::GetFontSize() * 0.35f;
 				}
 
-				DrawList->AddRectFilled({ SelectionX, LineY }, { std::max(SelectionX + 1.0f, SelectionEndX), LineY + LineHeight }, SelectionColor);
+				DrawList->AddRectFilled({SelectionX, LineY}, {std::max(SelectionX + 1.0f, SelectionEndX), LineY + LineHeight}, SelectionColor);
 			}
 
 			const FLogEntry& Entry = Entries[VisibleEntries[LineIndex]];
 			const ImU32 CategoryColor = ResolveCategoryColor(Entry.Category);
 			const ImU32 LevelColor = ResolveLevelColor(Entry.Level);
 			const ImU32 LineColor = !HasLogLevelColorOverride(Entry.Level) && bColorizeCategories ? CategoryColor : LevelColor;
-			DrawList->AddText({ TextOrigin.x, LineY + TextOffsetY }, LineColor, Line.data(), Line.data() + Line.size());
+			DrawList->AddText({TextOrigin.x, LineY + TextOffsetY}, LineColor, Line.data(), Line.data() + Line.size());
 		}
 
 		bScrollToBottom = false;
@@ -473,7 +471,7 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 		FOutputLogPanel* Panel;
 		std::span<const std::string_view> Commands;
 	};
-	FCommandInputContext CommandInputContext = { this, Commands };
+	FCommandInputContext CommandInputContext = {this, Commands};
 	const auto HistoryCallback = [](ImGuiInputTextCallbackData* const Data)
 	{
 		FCommandInputContext& Context = *static_cast<FCommandInputContext*>(Data->UserData);
@@ -573,10 +571,10 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 	};
 
 	constexpr ImGuiInputTextFlags CommandFlags =
-		ImGuiInputTextFlags_EnterReturnsTrue |
-		ImGuiInputTextFlags_CallbackCompletion |
-		ImGuiInputTextFlags_CallbackEdit |
-		ImGuiInputTextFlags_CallbackHistory;
+	    ImGuiInputTextFlags_EnterReturnsTrue |
+	    ImGuiInputTextFlags_CallbackCompletion |
+	    ImGuiInputTextFlags_CallbackEdit |
+	    ImGuiInputTextFlags_CallbackHistory;
 	constexpr char SubmitLabel[] = "Submit";
 	const float SubmitButtonWidth = ImGui::CalcTextSize(SubmitLabel).x + ImGui::GetStyle().FramePadding.x * 2.0f;
 	ImGui::SetNextItemWidth(-(SubmitButtonWidth + ImGui::GetStyle().ItemSpacing.x));
@@ -592,8 +590,8 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 		bReclaimCommandFocus = false;
 	}
 	ImGui::SameLine();
-	ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.5f, 0.5f });
-	if (ImGui::Button(SubmitLabel, { SubmitButtonWidth, 0.0f }))
+	ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, {0.5f, 0.5f});
+	if (ImGui::Button(SubmitLabel, {SubmitButtonWidth, 0.0f}))
 	{
 		SubmitCommand();
 	}
@@ -607,17 +605,17 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 		const float PopupPadding = 4.0f * InterfaceScale;
 		const float PopupHeight = static_cast<float>(VisibleSuggestionCount) * ImGui::GetFrameHeight() + PopupPadding * 2.0f;
 		const float PopupY = std::max(Viewport->WorkPos.y, CommandInputMin.y - PopupHeight);
-		ImGui::SetNextWindowPos({ CommandInputMin.x, PopupY }, ImGuiCond_Always);
-		ImGui::SetNextWindowSize({ CommandInputMax.x - CommandInputMin.x, PopupHeight }, ImGuiCond_Always);
+		ImGui::SetNextWindowPos({CommandInputMin.x, PopupY}, ImGuiCond_Always);
+		ImGui::SetNextWindowSize({CommandInputMax.x - CommandInputMin.x, PopupHeight}, ImGuiCond_Always);
 		ImGui::SetNextWindowViewport(Viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { PopupPadding, PopupPadding });
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {PopupPadding, PopupPadding});
 		constexpr ImGuiWindowFlags SuggestionFlags =
-			ImGuiWindowFlags_NoDecoration |
-			ImGuiWindowFlags_NoDocking |
-			ImGuiWindowFlags_NoFocusOnAppearing |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoNavFocus |
-			ImGuiWindowFlags_NoSavedSettings;
+		    ImGuiWindowFlags_NoDecoration |
+		    ImGuiWindowFlags_NoDocking |
+		    ImGuiWindowFlags_NoFocusOnAppearing |
+		    ImGuiWindowFlags_NoMove |
+		    ImGuiWindowFlags_NoNavFocus |
+		    ImGuiWindowFlags_NoSavedSettings;
 		if (ImGui::Begin("Command suggestions###OutputLogCommandSuggestions", nullptr, SuggestionFlags))
 		{
 			for (std::size_t SuggestionIndex = 0; SuggestionIndex < CommandSuggestions.size(); SuggestionIndex++)

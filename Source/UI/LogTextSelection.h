@@ -54,7 +54,7 @@ public:
 		}
 
 		Anchor = FLogTextPosition{};
-		Caret = FLogTextPosition{ Lines.size() - 1, Lines.back().size() };
+		Caret = FLogTextPosition{Lines.size() - 1, Lines.back().size()};
 	}
 
 	void ClampTo(const std::span<const std::string> Lines)
@@ -94,7 +94,7 @@ public:
 			return {};
 		}
 
-		return IsBefore(*Caret, *Anchor) ? std::pair{ *Caret, *Anchor } : std::pair{ *Anchor, *Caret };
+		return IsBefore(*Caret, *Anchor) ? std::pair{*Caret, *Anchor} : std::pair{*Anchor, *Caret};
 	}
 
 	[[nodiscard]] std::string Copy(const std::span<const std::string> Lines) const

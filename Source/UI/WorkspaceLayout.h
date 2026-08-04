@@ -25,14 +25,14 @@ struct FWindowPlacement
 {
 	switch (Mode)
 	{
-	case EPanelTransparencyMode::All:
-		return true;
-	case EPanelTransparencyMode::FloatingOnly:
-		return !bDocked;
-	case EPanelTransparencyMode::DockedOnly:
-		return bDocked;
-	case EPanelTransparencyMode::Disabled:
-		return false;
+		case EPanelTransparencyMode::All:
+			return true;
+		case EPanelTransparencyMode::FloatingOnly:
+			return !bDocked;
+		case EPanelTransparencyMode::DockedOnly:
+			return bDocked;
+		case EPanelTransparencyMode::Disabled:
+			return false;
 	}
 
 	return false;
@@ -54,10 +54,9 @@ struct FWindowPlacement
 	const int Width = WorkAreaWidth * SizePercent / 100;
 	const int Height = WorkAreaHeight * SizePercent / 100;
 	return {
-		WorkAreaX + (WorkAreaWidth - Width) / 2,
-		WorkAreaY + (WorkAreaHeight - Height) / 2,
-		Width,
-		Height
-	};
+	    WorkAreaX + (WorkAreaWidth - Width) / 2,
+	    WorkAreaY + (WorkAreaHeight - Height) / 2,
+	    Width,
+	    Height};
 }
 }

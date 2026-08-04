@@ -61,14 +61,13 @@ struct FTitleBarLayout
 [[nodiscard]] constexpr FTitleBarLayout MakeTitleBarLayout(const int WindowWidth, const int WindowHeight, const float ContentScale, const bool bResizable, const bool bMaximized) noexcept
 {
 	return {
-		.WindowWidth = WindowWidth,
-		.WindowHeight = WindowHeight,
-		.TitleBarHeight = ScaleTitleBarMetric(DefaultTitleBarHeight, ContentScale),
-		.ButtonWidth = ScaleTitleBarMetric(46, ContentScale),
-		.ResizeBorder = ScaleTitleBarMetric(6, ContentScale),
-		.bResizable = bResizable,
-		.bMaximized = bMaximized
-	};
+	    .WindowWidth = WindowWidth,
+	    .WindowHeight = WindowHeight,
+	    .TitleBarHeight = ScaleTitleBarMetric(DefaultTitleBarHeight, ContentScale),
+	    .ButtonWidth = ScaleTitleBarMetric(46, ContentScale),
+	    .ResizeBorder = ScaleTitleBarMetric(6, ContentScale),
+	    .bResizable = bResizable,
+	    .bMaximized = bMaximized};
 }
 
 [[nodiscard]] constexpr ETitleBarHitRegion HitTestTitleBar(const FTitleBarLayout& Layout, const int X, const int Y, const bool bUiCapturesMouse) noexcept
@@ -90,14 +89,45 @@ struct FTitleBarLayout
 		const bool bTop = Y < Layout.ResizeBorder;
 		const bool bBottom = Y >= Layout.WindowHeight - Layout.ResizeBorder;
 
-		if (bTop && bLeft) return ETitleBarHitRegion::ResizeTopLeft;
-		if (bTop && bRight) return ETitleBarHitRegion::ResizeTopRight;
-		if (bBottom && bLeft) return ETitleBarHitRegion::ResizeBottomLeft;
-		if (bBottom && bRight) return ETitleBarHitRegion::ResizeBottomRight;
-		if (bLeft) return ETitleBarHitRegion::ResizeLeft;
-		if (bRight) return ETitleBarHitRegion::ResizeRight;
-		if (bTop) return ETitleBarHitRegion::ResizeTop;
-		if (bBottom) return ETitleBarHitRegion::ResizeBottom;
+		if (bTop && bLeft)
+		{
+			return ETitleBarHitRegion::ResizeTopLeft;
+		}
+
+		if (bTop && bRight)
+		{
+			return ETitleBarHitRegion::ResizeTopRight;
+		}
+
+		if (bBottom && bLeft)
+		{
+			return ETitleBarHitRegion::ResizeBottomLeft;
+		}
+
+		if (bBottom && bRight)
+		{
+			return ETitleBarHitRegion::ResizeBottomRight;
+		}
+
+		if (bLeft)
+		{
+			return ETitleBarHitRegion::ResizeLeft;
+		}
+
+		if (bRight)
+		{
+			return ETitleBarHitRegion::ResizeRight;
+		}
+
+		if (bTop)
+		{
+			return ETitleBarHitRegion::ResizeTop;
+		}
+
+		if (bBottom)
+		{
+			return ETitleBarHitRegion::ResizeBottom;
+		}
 	}
 
 	if (Y >= Layout.TitleBarHeight)

@@ -1,10 +1,9 @@
-#include <doctest/doctest.h>
-
 #include "Logging/Log.h"
 #include "UI/OutputLog.h"
 
 #include <algorithm>
 #include <cstddef>
+#include <doctest/doctest.h>
 #include <string>
 #include <thread>
 #include <vector>
@@ -54,33 +53,33 @@ TEST_CASE("Output Log command completion matches partial commands without replac
 
 TEST_CASE("Output Log text selection copies ranges across lines")
 {
-	const std::vector<std::string> Lines = { "alpha", "bravo", "charlie" };
+	const std::vector<std::string> Lines = {"alpha", "bravo", "charlie"};
 	FLogTextSelection Selection;
 
-	Selection.Begin({ 0, 2 }, false);
-	Selection.Update({ 2, 4 });
+	Selection.Begin({0, 2}, false);
+	Selection.Update({2, 4});
 	CHECK(Selection.HasSelection());
 	CHECK(Selection.Copy(Lines) == "pha\nbravo\nchar");
 
-	Selection.Begin({ 2, 4 }, false);
-	Selection.Update({ 0, 2 });
+	Selection.Begin({2, 4}, false);
+	Selection.Update({0, 2});
 	CHECK(Selection.Copy(Lines) == "pha\nbravo\nchar");
 }
 
 TEST_CASE("Output Log text selection supports extension and select all")
 {
-	const std::vector<std::string> Lines = { "alpha", "bravo", "charlie" };
+	const std::vector<std::string> Lines = {"alpha", "bravo", "charlie"};
 	FLogTextSelection Selection;
 
-	Selection.Begin({ 1, 2 }, false);
-	Selection.Begin({ 2, 3 }, true);
+	Selection.Begin({1, 2}, false);
+	Selection.Begin({2, 3}, true);
 	CHECK(Selection.Copy(Lines) == "avo\ncha");
 
 	Selection.SelectAll(Lines);
 	CHECK(Selection.Copy(Lines) == "alpha\nbravo\ncharlie");
 
-	Selection.ClampTo({ Lines.data(), 1 });
-	CHECK(Selection.Copy({ Lines.data(), 1 }) == "alpha");
+	Selection.ClampTo({Lines.data(), 1});
+	CHECK(Selection.Copy({Lines.data(), 1}) == "alpha");
 	Selection.Clear();
 	CHECK_FALSE(Selection.HasSelection());
 }
@@ -149,12 +148,12 @@ TEST_CASE("Concurrent log producers retain a strictly ordered bounded history")
 	for (std::size_t ThreadIndex = 0; ThreadIndex < ThreadCount; ThreadIndex++)
 	{
 		Threads.emplace_back([&Buffer, ThreadIndex]
-		{
-			for (std::size_t EntryIndex = 0; EntryIndex < EntriesPerThread; EntryIndex++)
-			{
-				(void)Buffer.Append(ELogLevel::Debug, "Worker", std::format("{}:{}", ThreadIndex, EntryIndex));
-			}
-		});
+		                     {
+			                     for (std::size_t EntryIndex = 0; EntryIndex < EntriesPerThread; EntryIndex++)
+			                     {
+				                     (void)Buffer.Append(ELogLevel::Debug, "Worker", std::format("{}:{}", ThreadIndex, EntryIndex));
+			                     }
+		                     });
 	}
 
 	for (std::thread& Thread : Threads)

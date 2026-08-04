@@ -1,7 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include <doctest/doctest.h>
-
 #include "UI/TitleBarLayout.h"
+
+#include <doctest/doctest.h>
 
 using ProjectTemplate::ETitleBarHitRegion;
 using ProjectTemplate::HitTestTitleBar;

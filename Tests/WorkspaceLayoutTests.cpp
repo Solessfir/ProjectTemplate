@@ -1,12 +1,12 @@
-#include <doctest/doctest.h>
-
 #include "UI/WorkspaceLayout.h"
 
-using ProjectTemplate::ResolveToolbarRightX;
-using ProjectTemplate::ResolveCenteredWindowPlacement;
-using ProjectTemplate::ShouldShowToolbarStatus;
+#include <doctest/doctest.h>
+
 using ProjectTemplate::EPanelTransparencyMode;
 using ProjectTemplate::IsPanelTransparent;
+using ProjectTemplate::ResolveCenteredWindowPlacement;
+using ProjectTemplate::ResolveToolbarRightX;
+using ProjectTemplate::ShouldShowToolbarStatus;
 
 TEST_CASE("Panel transparency mode distinguishes docked and floating windows")
 {

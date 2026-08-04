@@ -9,17 +9,15 @@
 #include "UI/WorkspaceLayout.h"
 
 #include <GLFW/glfw3.h>
-
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
-#include <imgui.h>
-#include <imgui_internal.h>
-
 #include <algorithm>
 #include <array>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <limits>
 #include <optional>
 #include <print>
@@ -32,7 +30,7 @@ namespace
 {
 constexpr const char* ApplicationTitle = "Project Template";
 constexpr const char* MainDockspaceName = "MainDockspaceV3";
-constexpr std::array<std::string_view, 4> OutputLogCommands = { "clear", "components", "help", "licenses" };
+constexpr std::array<std::string_view, 4> OutputLogCommands = {"clear", "components", "help", "licenses"};
 constexpr int DefaultWindowWidth = 1280;
 constexpr int DefaultWindowHeight = 720;
 constexpr int InitialWindowWorkAreaPercent = 80;
@@ -108,11 +106,10 @@ struct FPanelTransparencyOption
 };
 
 constexpr FPanelTransparencyOption PanelTransparencyOptions[] = {
-	{ EPanelTransparencyMode::All, "All panels" },
-	{ EPanelTransparencyMode::FloatingOnly, "Floating panels only" },
-	{ EPanelTransparencyMode::DockedOnly, "Docked panels only" },
-	{ EPanelTransparencyMode::Disabled, "Disabled" }
-};
+    {EPanelTransparencyMode::All, "All panels"},
+    {EPanelTransparencyMode::FloatingOnly, "Floating panels only"},
+    {EPanelTransparencyMode::DockedOnly, "Docked panels only"},
+    {EPanelTransparencyMode::Disabled, "Disabled"}};
 
 [[nodiscard]] constexpr const char* GetPanelTransparencyLabel(const EPanelTransparencyMode Mode) noexcept
 {
@@ -169,10 +166,10 @@ void EnsureDefaultDockLayout(const ImGuiID DockspaceId, const ImVec2 DockspaceSi
 	// ImGui keeps the font source for dynamic glyph generation, so the asset provider owns it until context shutdown.
 	FontConfig.FontDataOwnedByAtlas = false;
 	return IO.Fonts->AddFontFromMemoryTTF(
-		const_cast<std::byte*>(FontData->data()),
-		static_cast<int>(FontData->size()),
-		0.0f,
-		&FontConfig);
+	    const_cast<std::byte*>(FontData->data()),
+	    static_cast<int>(FontData->size()),
+	    0.0f,
+	    &FontConfig);
 }
 
 [[nodiscard]] std::expected<std::string, FAssetLoadError> LoadTextAsset(FAssetProvider& AssetProvider, const std::string_view VirtualPath)
@@ -304,21 +301,36 @@ void CursorEnterCallback(GLFWwindow* const Window, const int bEntered)
 {
 	switch (Region)
 	{
-	case ETitleBarHitRegion::Client: return GLFW_HIT_TEST_CLIENT;
-	case ETitleBarHitRegion::Caption: return GLFW_HIT_TEST_CAPTION;
-	case ETitleBarHitRegion::ResizeLeft: return GLFW_HIT_TEST_RESIZE_LEFT;
-	case ETitleBarHitRegion::ResizeRight: return GLFW_HIT_TEST_RESIZE_RIGHT;
-	case ETitleBarHitRegion::ResizeTop: return GLFW_HIT_TEST_RESIZE_TOP;
-	case ETitleBarHitRegion::ResizeBottom: return GLFW_HIT_TEST_RESIZE_BOTTOM;
-	case ETitleBarHitRegion::ResizeTopLeft: return GLFW_HIT_TEST_RESIZE_TOP_LEFT;
-	case ETitleBarHitRegion::ResizeTopRight: return GLFW_HIT_TEST_RESIZE_TOP_RIGHT;
-	case ETitleBarHitRegion::ResizeBottomLeft: return GLFW_HIT_TEST_RESIZE_BOTTOM_LEFT;
-	case ETitleBarHitRegion::ResizeBottomRight: return GLFW_HIT_TEST_RESIZE_BOTTOM_RIGHT;
-	case ETitleBarHitRegion::SystemMenu: return GLFW_HIT_TEST_SYSTEM_MENU;
-	case ETitleBarHitRegion::ApplicationMenu: return GLFW_HIT_TEST_CLIENT;
-	case ETitleBarHitRegion::MinimizeButton: return GLFW_HIT_TEST_MINIMIZE_BUTTON;
-	case ETitleBarHitRegion::MaximizeButton: return GLFW_HIT_TEST_MAXIMIZE_BUTTON;
-	case ETitleBarHitRegion::CloseButton: return GLFW_HIT_TEST_CLOSE_BUTTON;
+		case ETitleBarHitRegion::Client:
+			return GLFW_HIT_TEST_CLIENT;
+		case ETitleBarHitRegion::Caption:
+			return GLFW_HIT_TEST_CAPTION;
+		case ETitleBarHitRegion::ResizeLeft:
+			return GLFW_HIT_TEST_RESIZE_LEFT;
+		case ETitleBarHitRegion::ResizeRight:
+			return GLFW_HIT_TEST_RESIZE_RIGHT;
+		case ETitleBarHitRegion::ResizeTop:
+			return GLFW_HIT_TEST_RESIZE_TOP;
+		case ETitleBarHitRegion::ResizeBottom:
+			return GLFW_HIT_TEST_RESIZE_BOTTOM;
+		case ETitleBarHitRegion::ResizeTopLeft:
+			return GLFW_HIT_TEST_RESIZE_TOP_LEFT;
+		case ETitleBarHitRegion::ResizeTopRight:
+			return GLFW_HIT_TEST_RESIZE_TOP_RIGHT;
+		case ETitleBarHitRegion::ResizeBottomLeft:
+			return GLFW_HIT_TEST_RESIZE_BOTTOM_LEFT;
+		case ETitleBarHitRegion::ResizeBottomRight:
+			return GLFW_HIT_TEST_RESIZE_BOTTOM_RIGHT;
+		case ETitleBarHitRegion::SystemMenu:
+			return GLFW_HIT_TEST_SYSTEM_MENU;
+		case ETitleBarHitRegion::ApplicationMenu:
+			return GLFW_HIT_TEST_CLIENT;
+		case ETitleBarHitRegion::MinimizeButton:
+			return GLFW_HIT_TEST_MINIMIZE_BUTTON;
+		case ETitleBarHitRegion::MaximizeButton:
+			return GLFW_HIT_TEST_MAXIMIZE_BUTTON;
+		case ETitleBarHitRegion::CloseButton:
+			return GLFW_HIT_TEST_CLOSE_BUTTON;
 	}
 
 	return GLFW_HIT_TEST_CLIENT;
@@ -329,8 +341,8 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 	// Native hit testing may run while GLFW dispatches events, so it uses capture state cached by the last ImGui frame.
 	const FWindowState* const State = GetWindowState(Window);
 	return State == nullptr
-		? GLFW_HIT_TEST_CLIENT
-		: ToGlfwHitTest(HitTestTitleBar(State->TitleBar, X, Y, State->bUiCapturesMouse));
+	           ? GLFW_HIT_TEST_CLIENT
+	           : ToGlfwHitTest(HitTestTitleBar(State->TitleBar, X, Y, State->bUiCapturesMouse));
 }
 
 [[nodiscard]] ETitleBarHitRegion GetHoveredRegion(const FWindowState& State)
@@ -341,10 +353,10 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 	}
 
 	return HitTestTitleBar(
-		State.TitleBar,
-		static_cast<int>(State.CursorX),
-		static_cast<int>(State.CursorY),
-		State.bUiCapturesMouse);
+	    State.TitleBar,
+	    static_cast<int>(State.CursorX),
+	    static_cast<int>(State.CursorY),
+	    State.bUiCapturesMouse);
 }
 
 [[nodiscard]] ImU32 MixColors(const ImU32 Base, const ImU32 Tint, const float Strength)
@@ -377,8 +389,8 @@ void DrawApplicationBackground(const FUiState& State, const bool bFocused)
 {
 	ImGuiViewport& Viewport = *ImGui::GetMainViewport();
 	const ImVec2 CanvasMin = Viewport.Pos;
-	const ImVec2 CanvasMax = { Viewport.Pos.x + Viewport.Size.x, Viewport.Pos.y + Viewport.Size.y };
-	const ImVec2 GradientMax = { CanvasMax.x, CanvasMin.y + Viewport.Size.y * State.GradientHeight };
+	const ImVec2 CanvasMax = {Viewport.Pos.x + Viewport.Size.x, Viewport.Pos.y + Viewport.Size.y};
+	const ImVec2 GradientMax = {CanvasMax.x, CanvasMin.y + Viewport.Size.y * State.GradientHeight};
 	const float FocusSaturation = bFocused ? State.BackgroundSaturation : State.BackgroundSaturation * Theme::Background::UnfocusedSaturationRatio;
 	const ImU32 GradientColor = ApplySaturation(ImGui::ColorConvertFloat4ToU32(State.BackgroundColor), FocusSaturation);
 	const ImU32 TopLeft = MixColors(Theme::Colors::Canvas, GradientColor, State.BackgroundIntensity);
@@ -386,12 +398,12 @@ void DrawApplicationBackground(const FUiState& State, const bool bFocused)
 	ImDrawList& DrawList = *ImGui::GetBackgroundDrawList(&Viewport);
 	DrawList.AddRectFilled(CanvasMin, CanvasMax, Theme::Colors::Canvas);
 	DrawList.AddRectFilledMultiColor(
-		CanvasMin,
-		GradientMax,
-		TopLeft,
-		TopRight,
-		Theme::Colors::Canvas,
-		Theme::Colors::Canvas);
+	    CanvasMin,
+	    GradientMax,
+	    TopLeft,
+	    TopRight,
+	    Theme::Colors::Canvas,
+	    Theme::Colors::Canvas);
 }
 
 void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const float Top, const float Width, const float Height, const bool bHovered, const bool bCloseButton)
@@ -403,10 +415,10 @@ void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const fl
 
 	const ImU32 Color = bCloseButton ? Theme::Colors::CloseHover : Theme::Colors::TitleBarControlHover;
 	DrawList.AddRectFilled(
-		{ Left, Top },
-		{ Left + Width, Top + Height },
-		Color,
-		Theme::Rounding::TitleBarControlRounding * Height / 40.0f);
+	    {Left, Top},
+	    {Left + Width, Top + Height},
+	    Color,
+	    Theme::Rounding::TitleBarControlRounding * Height / 40.0f);
 }
 
 void DrawRestoreGlyph(ImDrawList& DrawList, const ImVec2 Center, const float Scale, const ImU32 Color, const float Thickness)
@@ -420,11 +432,11 @@ void DrawRestoreGlyph(ImDrawList& DrawList, const ImVec2 Center, const float Sca
 	const float FrontRight = Center.x + 3.0f * Scale;
 	const float FrontBottom = Center.y + 5.0f * Scale;
 
-	DrawList.AddLine({ BackLeft, BackTop }, { BackRight, BackTop }, Color, Thickness);
-	DrawList.AddLine({ BackRight, BackTop }, { BackRight, BackBottom }, Color, Thickness);
-	DrawList.AddLine({ BackLeft, BackTop }, { BackLeft, FrontTop }, Color, Thickness);
-	DrawList.AddLine({ FrontRight, BackBottom }, { BackRight, BackBottom }, Color, Thickness);
-	DrawList.AddRect({ FrontLeft, FrontTop }, { FrontRight, FrontBottom }, Color, 0.0f, 0, Thickness);
+	DrawList.AddLine({BackLeft, BackTop}, {BackRight, BackTop}, Color, Thickness);
+	DrawList.AddLine({BackRight, BackTop}, {BackRight, BackBottom}, Color, Thickness);
+	DrawList.AddLine({BackLeft, BackTop}, {BackLeft, FrontTop}, Color, Thickness);
+	DrawList.AddLine({FrontRight, BackBottom}, {BackRight, BackBottom}, Color, Thickness);
+	DrawList.AddRect({FrontLeft, FrontTop}, {FrontRight, FrontBottom}, Color, 0.0f, 0, Thickness);
 }
 
 void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
@@ -438,31 +450,31 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 	const ETitleBarHitRegion HoveredRegion = GetHoveredRegion(State);
 
 	DrawSystemButtonBackground(
-		DrawList,
-		Width - ButtonWidth * 3.0f,
-		0.0f,
-		ButtonWidth,
-		Height,
-		HoveredRegion == ETitleBarHitRegion::MinimizeButton,
-		false);
+	    DrawList,
+	    Width - ButtonWidth * 3.0f,
+	    0.0f,
+	    ButtonWidth,
+	    Height,
+	    HoveredRegion == ETitleBarHitRegion::MinimizeButton,
+	    false);
 
 	DrawSystemButtonBackground(
-		DrawList,
-		Width - ButtonWidth * 2.0f,
-		0.0f,
-		ButtonWidth,
-		Height,
-		HoveredRegion == ETitleBarHitRegion::MaximizeButton,
-		false);
+	    DrawList,
+	    Width - ButtonWidth * 2.0f,
+	    0.0f,
+	    ButtonWidth,
+	    Height,
+	    HoveredRegion == ETitleBarHitRegion::MaximizeButton,
+	    false);
 
 	DrawSystemButtonBackground(
-		DrawList,
-		Width - ButtonWidth,
-		0.0f,
-		ButtonWidth,
-		Height,
-		HoveredRegion == ETitleBarHitRegion::CloseButton,
-		true);
+	    DrawList,
+	    Width - ButtonWidth,
+	    0.0f,
+	    ButtonWidth,
+	    Height,
+	    HoveredRegion == ETitleBarHitRegion::CloseButton,
+	    true);
 
 	constexpr ImU32 GlyphColor = Theme::Colors::TextPrimary;
 	const float LineThickness = std::max(1.0f, Scale);
@@ -470,60 +482,60 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 	const float CenterY = Height * 0.5f;
 
 	DrawList.AddLine(
-		{ MinimizeCenterX - 5.0f * Scale, CenterY + 3.0f * Scale },
-		{ MinimizeCenterX + 5.0f * Scale, CenterY + 3.0f * Scale },
-		GlyphColor,
-		LineThickness);
+	    {MinimizeCenterX - 5.0f * Scale, CenterY + 3.0f * Scale},
+	    {MinimizeCenterX + 5.0f * Scale, CenterY + 3.0f * Scale},
+	    GlyphColor,
+	    LineThickness);
 
 	const float MaximizeCenterX = Width - ButtonWidth * 1.5f;
 	if (Layout.bMaximized)
 	{
-		DrawRestoreGlyph(DrawList, { MaximizeCenterX, CenterY }, Scale, GlyphColor, LineThickness);
+		DrawRestoreGlyph(DrawList, {MaximizeCenterX, CenterY}, Scale, GlyphColor, LineThickness);
 	}
 	else
 	{
 		DrawList.AddRect(
-			{ MaximizeCenterX - 5.0f * Scale, CenterY - 5.0f * Scale },
-			{ MaximizeCenterX + 5.0f * Scale, CenterY + 5.0f * Scale },
-			GlyphColor,
-			0.0f,
-			0,
-			LineThickness);
+		    {MaximizeCenterX - 5.0f * Scale, CenterY - 5.0f * Scale},
+		    {MaximizeCenterX + 5.0f * Scale, CenterY + 5.0f * Scale},
+		    GlyphColor,
+		    0.0f,
+		    0,
+		    LineThickness);
 	}
 
 	const float CloseCenterX = Width - ButtonWidth * 0.5f;
 	DrawList.AddLine(
-		{ CloseCenterX - 5.0f * Scale, CenterY - 5.0f * Scale },
-		{ CloseCenterX + 5.0f * Scale, CenterY + 5.0f * Scale },
-		GlyphColor,
-		LineThickness);
+	    {CloseCenterX - 5.0f * Scale, CenterY - 5.0f * Scale},
+	    {CloseCenterX + 5.0f * Scale, CenterY + 5.0f * Scale},
+	    GlyphColor,
+	    LineThickness);
 
 	DrawList.AddLine(
-		{ CloseCenterX + 5.0f * Scale, CenterY - 5.0f * Scale },
-		{ CloseCenterX - 5.0f * Scale, CenterY + 5.0f * Scale },
-		GlyphColor,
-		LineThickness);
+	    {CloseCenterX + 5.0f * Scale, CenterY - 5.0f * Scale},
+	    {CloseCenterX - 5.0f * Scale, CenterY + 5.0f * Scale},
+	    GlyphColor,
+	    LineThickness);
 
 	const float IconCenter = Height * 0.5f;
 	if (HoveredRegion == ETitleBarHitRegion::SystemMenu)
 	{
 		DrawList.AddRectFilled(
-			{ 0.0f, 0.0f },
-			{ Height, Height },
-			Theme::Colors::TitleBarControlHover,
-			Theme::Rounding::TitleBarControlRounding * Scale);
+		    {0.0f, 0.0f},
+		    {Height, Height},
+		    Theme::Colors::TitleBarControlHover,
+		    Theme::Rounding::TitleBarControlRounding * Scale);
 	}
-	DrawList.AddCircleFilled({ IconCenter, IconCenter }, 8.0f * Scale, Theme::Colors::Accent);
-	DrawList.AddCircle({ IconCenter, IconCenter }, 4.0f * Scale, Theme::Colors::Canvas, 0, LineThickness);
+	DrawList.AddCircleFilled({IconCenter, IconCenter}, 8.0f * Scale, Theme::Colors::Accent);
+	DrawList.AddCircle({IconCenter, IconCenter}, 4.0f * Scale, Theme::Colors::Canvas, 0, LineThickness);
 
 	ImGui::PushFont(Fonts.Medium, 0.0f);
 	const ImVec2 TextSize = ImGui::CalcTextSize(ApplicationTitle);
 
-	DrawList.PushClipRect({ Height * 2.0f, 0.0f }, { Width - ButtonWidth * 3.0f, Height }, true);
+	DrawList.PushClipRect({Height * 2.0f, 0.0f}, {Width - ButtonWidth * 3.0f, Height}, true);
 	DrawList.AddText(
-		{ Height * 2.0f + 10.0f * Scale, (Height - TextSize.y) * 0.5f },
-		State.bFocused ? Theme::Colors::TextPrimary : Theme::Colors::TextMuted,
-		ApplicationTitle);
+	    {Height * 2.0f + 10.0f * Scale, (Height - TextSize.y) * 0.5f},
+	    State.bFocused ? Theme::Colors::TextPrimary : Theme::Colors::TextMuted,
+	    ApplicationTitle);
 	DrawList.PopClipRect();
 	ImGui::PopFont();
 }
@@ -532,25 +544,25 @@ void DrawApplicationMenu(GLFWwindow* const Window, const FTitleBarLayout& Layout
 {
 	const float Height = static_cast<float>(Layout.TitleBarHeight);
 	const float Scale = Height / 40.0f;
-	const ImVec2 ButtonPosition = { Height, 0.0f };
-	const ImVec2 ButtonSize = { Height, Height };
+	const ImVec2 ButtonPosition = {Height, 0.0f};
+	const ImVec2 ButtonSize = {Height, Height};
 
 	ImGui::SetNextWindowPos(ButtonPosition);
 	ImGui::SetNextWindowSize(ButtonSize);
 	ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	constexpr ImGuiWindowFlags HostFlags =
-		ImGuiWindowFlags_NoDecoration |
-		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoSavedSettings |
-		ImGuiWindowFlags_NoDocking |
-		ImGuiWindowFlags_NoBringToFrontOnFocus |
-		ImGuiWindowFlags_NoNavFocus |
-		ImGuiWindowFlags_NoScrollbar |
-		ImGuiWindowFlags_NoScrollWithMouse |
-		ImGuiWindowFlags_NoBackground;
+	    ImGuiWindowFlags_NoDecoration |
+	    ImGuiWindowFlags_NoMove |
+	    ImGuiWindowFlags_NoSavedSettings |
+	    ImGuiWindowFlags_NoDocking |
+	    ImGuiWindowFlags_NoBringToFrontOnFocus |
+	    ImGuiWindowFlags_NoNavFocus |
+	    ImGuiWindowFlags_NoScrollbar |
+	    ImGuiWindowFlags_NoScrollWithMouse |
+	    ImGuiWindowFlags_NoBackground;
 	ImGui::Begin("ApplicationMenuHost", nullptr, HostFlags);
 	ImGui::PopStyleVar(3);
 
@@ -565,10 +577,10 @@ void DrawApplicationMenu(GLFWwindow* const Window, const FTitleBarLayout& Layout
 	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 	{
 		DrawList.AddRectFilled(
-			ButtonMin,
-			ButtonMax,
-			Theme::Colors::TitleBarControlHover,
-			Theme::Rounding::TitleBarControlRounding * Scale);
+		    ButtonMin,
+		    ButtonMax,
+		    Theme::Colors::TitleBarControlHover,
+		    Theme::Rounding::TitleBarControlRounding * Scale);
 	}
 
 	const ImU32 GlyphColor = Theme::Colors::TextPrimary;
@@ -577,13 +589,13 @@ void DrawApplicationMenu(GLFWwindow* const Window, const FTitleBarLayout& Layout
 	const float CenterY = (ButtonMin.y + ButtonMax.y) * 0.5f;
 	const float LineLeft = CenterX - 7.0f * Scale;
 	const float LineRight = CenterX + 7.0f * Scale;
-	for (const float Offset : { -5.0f, 0.0f, 5.0f })
+	for (const float Offset : {-5.0f, 0.0f, 5.0f})
 	{
 		const float Y = CenterY + Offset * Scale;
-		DrawList.AddLine({ LineLeft, Y }, { LineRight, Y }, GlyphColor, LineThickness);
+		DrawList.AddLine({LineLeft, Y}, {LineRight, Y}, GlyphColor, LineThickness);
 	}
 
-	ImGui::SetNextWindowPos({ ButtonPosition.x, Height }, ImGuiCond_Appearing);
+	ImGui::SetNextWindowPos({ButtonPosition.x, Height}, ImGuiCond_Appearing);
 	if (ImGui::BeginPopup("ApplicationMenu"))
 	{
 		ImGui::MenuItem("Output Log", nullptr, &State.bShowOutputLog);
@@ -628,26 +640,26 @@ void DrawApplicationMenu(GLFWwindow* const Window, const FTitleBarLayout& Layout
 void DrawWorkspaceIntro(FUiState& State, const FApplicationFonts& Fonts)
 {
 	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 20.0f * InterfaceScale, 20.0f * InterfaceScale });
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {20.0f * InterfaceScale, 20.0f * InterfaceScale});
 	ImGui::BeginChild(
-		"WorkspaceIntro",
-		{ 0.0f, 188.0f * InterfaceScale },
-		ImGuiChildFlags_AlwaysUseWindowPadding,
-		ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+	    "WorkspaceIntro",
+	    {0.0f, 188.0f * InterfaceScale},
+	    ImGuiChildFlags_AlwaysUseWindowPadding,
+	    ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
 	ImGui::PushFont(Fonts.Medium, 13.0f);
 	ImGui::PushStyleColor(ImGuiCol_Text, Theme::Colors::Accent);
 	ImGui::TextUnformatted("PROJECT TEMPLATE / NATIVE C++23");
 	ImGui::PopStyleColor();
 	ImGui::PopFont();
-	ImGui::Dummy({ 0.0f, 6.0f * InterfaceScale });
+	ImGui::Dummy({0.0f, 6.0f * InterfaceScale});
 	ImGui::PushFont(Fonts.Medium, 30.0f);
 	ImGui::TextUnformatted("Build something native.");
 	ImGui::PopFont();
 	ImGui::PushStyleColor(ImGuiCol_Text, Theme::Colors::TextSecondary);
 	ImGui::TextWrapped("A focused Windows and Linux starting point with modern C++, native window behavior, and a UI ready to shape.");
 	ImGui::PopStyleColor();
-	ImGui::Dummy({ 0.0f, 10.0f * InterfaceScale });
+	ImGui::Dummy({0.0f, 10.0f * InterfaceScale});
 
 	if (DrawPrimaryButton("Explore components", Fonts))
 	{
@@ -668,11 +680,11 @@ void DrawProjectCard(FUiState& State, const FApplicationFonts& Fonts)
 {
 	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Theme::Rounding::Child * InterfaceScale);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 16.0f * InterfaceScale, 16.0f * InterfaceScale });
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f * InterfaceScale, 16.0f * InterfaceScale});
 	ImGui::BeginChild(
-		"ProjectCard",
-		{ 0.0f, 180.0f * InterfaceScale },
-		ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+	    "ProjectCard",
+	    {0.0f, 180.0f * InterfaceScale},
+	    ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
 
 	ImGui::PushFont(Fonts.Medium, 16.0f);
 	ImGui::TextUnformatted("Template identity");
@@ -680,7 +692,7 @@ void DrawProjectCard(FUiState& State, const FApplicationFonts& Fonts)
 	ImGui::PushStyleColor(ImGuiCol_Text, Theme::Colors::TextSecondary);
 	ImGui::TextWrapped("Give the derived application a working name before replacing the template identifiers.");
 	ImGui::PopStyleColor();
-	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
+	ImGui::Dummy({0.0f, 4.0f * InterfaceScale});
 	ImGui::SetNextItemWidth(-1.0f);
 	ImGui::InputTextWithHint("##ApplicationName", "Application name", State.ApplicationName, sizeof(State.ApplicationName));
 	if (ImGui::Button("Copy name"))
@@ -698,11 +710,11 @@ void DrawBuildProfileCard(const FApplicationFonts& Fonts)
 {
 	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Theme::Rounding::Child * InterfaceScale);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 16.0f * InterfaceScale, 16.0f * InterfaceScale });
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f * InterfaceScale, 16.0f * InterfaceScale});
 	ImGui::BeginChild(
-		"BuildProfileCard",
-		{ 0.0f, 180.0f * InterfaceScale },
-		ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+	    "BuildProfileCard",
+	    {0.0f, 180.0f * InterfaceScale},
+	    ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
 
 	ImGui::PushFont(Fonts.Medium, 16.0f);
 	ImGui::TextUnformatted("Build profile");
@@ -710,17 +722,16 @@ void DrawBuildProfileCard(const FApplicationFonts& Fonts)
 	ImGui::PushStyleColor(ImGuiCol_Text, Theme::Colors::TextSecondary);
 	ImGui::TextWrapped("Production-shaped defaults without framework weight.");
 	ImGui::PopStyleColor();
-	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
+	ImGui::Dummy({0.0f, 4.0f * InterfaceScale});
 
-	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, { 0.0f, 3.0f * InterfaceScale });
+	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, {0.0f, 3.0f * InterfaceScale});
 	if (ImGui::BeginTable("BuildProfile", 2, ImGuiTableFlags_SizingStretchProp))
 	{
 		constexpr const char* Rows[][2] = {
-			{ "Language", "C++23" },
-			{ "Window", "GLFW native title bar" },
-			{ "Interface", "Dear ImGui docking" },
-			{ "Shipping", "Embedded assets" }
-		};
+		    {"Language", "C++23"},
+		    {"Window", "GLFW native title bar"},
+		    {"Interface", "Dear ImGui docking"},
+		    {"Shipping", "Embedded assets"}};
 
 		for (const auto& Row : Rows)
 		{
@@ -745,11 +756,11 @@ void DrawAppearanceCard(FUiState& State, const FApplicationFonts& Fonts)
 	const int RowCount = (Theme::Background::PresetCount + ColumnCount - 1) / ColumnCount;
 	const float CardHeight = (326.0f + static_cast<float>(RowCount) * 30.0f) * InterfaceScale;
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Theme::Rounding::Child * InterfaceScale);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 16.0f * InterfaceScale, 16.0f * InterfaceScale });
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f * InterfaceScale, 16.0f * InterfaceScale});
 	ImGui::BeginChild(
-		"AppearanceCard",
-		{ 0.0f, CardHeight },
-		ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+	    "AppearanceCard",
+	    {0.0f, CardHeight},
+	    ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
 
 	ImGui::PushFont(Fonts.Medium, 16.0f);
 	ImGui::TextUnformatted("Background appearance");
@@ -757,7 +768,7 @@ void DrawAppearanceCard(FUiState& State, const FApplicationFonts& Fonts)
 	ImGui::PushStyleColor(ImGuiCol_Text, Theme::Colors::TextSecondary);
 	ImGui::TextWrapped("Choose an accent and control how far its gradient reaches into the workspace.");
 	ImGui::PopStyleColor();
-	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
+	ImGui::Dummy({0.0f, 4.0f * InterfaceScale});
 
 	ImGui::TextUnformatted("Panel transparency");
 	ImGui::SetNextItemWidth(-1.0f);
@@ -801,23 +812,23 @@ void DrawAppearanceCard(FUiState& State, const FApplicationFonts& Fonts)
 		State.BackgroundIntensity = static_cast<float>(IntensityPercent) / 100.0f;
 	}
 
-	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
+	ImGui::Dummy({0.0f, 4.0f * InterfaceScale});
 	ImGui::TextUnformatted("Color");
 	constexpr ImGuiColorEditFlags ColorEditFlags =
-		ImGuiColorEditFlags_NoAlpha |
-		ImGuiColorEditFlags_PickerHueWheel |
-		ImGuiColorEditFlags_DisplayRGB |
-		ImGuiColorEditFlags_InputRGB |
-		ImGuiColorEditFlags_Uint8;
+	    ImGuiColorEditFlags_NoAlpha |
+	    ImGuiColorEditFlags_PickerHueWheel |
+	    ImGuiColorEditFlags_DisplayRGB |
+	    ImGuiColorEditFlags_InputRGB |
+	    ImGuiColorEditFlags_Uint8;
 	ImGui::SetNextItemWidth(-1.0f);
 	if (ImGui::ColorEdit3(
-		State.BackgroundPreset < 0 ? "Custom color (Current)##BackgroundCustomColor" : "Custom color##BackgroundCustomColor",
-		&State.BackgroundColor.x,
-		ColorEditFlags))
+	        State.BackgroundPreset < 0 ? "Custom color (Current)##BackgroundCustomColor" : "Custom color##BackgroundCustomColor",
+	        &State.BackgroundColor.x,
+	        ColorEditFlags))
 	{
 		State.BackgroundPreset = -1;
 	}
-	ImGui::Dummy({ 0.0f, 2.0f * InterfaceScale });
+	ImGui::Dummy({0.0f, 2.0f * InterfaceScale});
 	if (ImGui::BeginTable("BackgroundPresets", ColumnCount, ImGuiTableFlags_SizingStretchSame))
 	{
 		for (int PresetIndex = 0; PresetIndex < Theme::Background::PresetCount; ++PresetIndex)
@@ -838,16 +849,16 @@ void DrawAppearanceCard(FUiState& State, const FApplicationFonts& Fonts)
 			ImGui::TableNextColumn();
 			ImGui::PushID(PresetIndex);
 			if (ImGui::ColorButton(
-				"##Swatch",
-				ImGui::ColorConvertU32ToFloat4(Preset.Color),
-				ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop,
-				{ 20.0f * InterfaceScale, 20.0f * InterfaceScale }))
+			        "##Swatch",
+			        ImGui::ColorConvertU32ToFloat4(Preset.Color),
+			        ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop,
+			        {20.0f * InterfaceScale, 20.0f * InterfaceScale}))
 			{
 				State.BackgroundPreset = PresetIndex;
 				State.BackgroundColor = ImGui::ColorConvertU32ToFloat4(Preset.Color);
 			}
 			ImGui::SameLine();
-			if (ImGui::Selectable(Label, bSelected, ImGuiSelectableFlags_None, { 0.0f, 20.0f * InterfaceScale }))
+			if (ImGui::Selectable(Label, bSelected, ImGuiSelectableFlags_None, {0.0f, 20.0f * InterfaceScale}))
 			{
 				State.BackgroundPreset = PresetIndex;
 				State.BackgroundColor = ImGui::ColorConvertU32ToFloat4(Preset.Color);
@@ -870,10 +881,10 @@ void DrawLicenseModal(FUiState& State, const FApplicationResources& Resources)
 		State.bOpenLicenses = false;
 	}
 
-	ImGui::SetNextWindowSize({ 720.0f * InterfaceScale, 520.0f * InterfaceScale }, ImGuiCond_Appearing);
+	ImGui::SetNextWindowSize({720.0f * InterfaceScale, 520.0f * InterfaceScale}, ImGuiCond_Appearing);
 	if (ImGui::BeginPopupModal("Open-source licenses", nullptr, ImGuiWindowFlags_NoSavedSettings))
 	{
-		const ImVec2 LicenseSize = { 0.0f, -(ImGui::GetFrameHeightWithSpacing() + 8.0f * InterfaceScale) };
+		const ImVec2 LicenseSize = {0.0f, -(ImGui::GetFrameHeightWithSpacing() + 8.0f * InterfaceScale)};
 		if (ImGui::BeginTabBar("LicenseTabs"))
 		{
 			if (ImGui::BeginTabItem("Roboto"))
@@ -909,14 +920,14 @@ void DrawWorkspaceToolbar(FUiState& State, const FApplicationFonts& Fonts, const
 {
 	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
 	ImGui::BeginChild(
-		"WorkspaceToolbar",
-		{ 0.0f, ToolbarHeight },
-		ImGuiChildFlags_None,
-		ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+	    "WorkspaceToolbar",
+	    {0.0f, ToolbarHeight},
+	    ImGuiChildFlags_None,
+	    ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
 	const float FrameHeight = ImGui::GetFrameHeight();
 	const float ContentY = std::max(0.0f, (ToolbarHeight - FrameHeight) * 0.5f);
-	ImGui::SetCursorPos({ 16.0f * InterfaceScale, ContentY });
+	ImGui::SetCursorPos({16.0f * InterfaceScale, ContentY});
 	ImGui::AlignTextToFramePadding();
 	ImGui::PushFont(Fonts.Medium, 0.0f);
 	ImGui::TextUnformatted("Workspace");
@@ -937,7 +948,7 @@ void DrawWorkspaceToolbar(FUiState& State, const FApplicationFonts& Fonts, const
 	const float LicensesWidth = ImGui::CalcTextSize(LicensesLabel).x + Style.FramePadding.x * 2.0f;
 	const float RightGroupWidth = StatusWidth + OutputLogWidth + ComponentsWidth + LicensesWidth + Style.ItemSpacing.x * (1.0f + static_cast<float>(bShowStatus) + static_cast<float>(bShowOutputLogAction));
 	const float RightX = ResolveToolbarRightX(ImGui::GetWindowWidth(), MinimumRightX, RightGroupWidth, 16.0f * InterfaceScale);
-	ImGui::SetCursorPos({ RightX, ContentY });
+	ImGui::SetCursorPos({RightX, ContentY});
 	if (bShowStatus)
 	{
 		ImGui::AlignTextToFramePadding();
@@ -1002,57 +1013,55 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
 	const float ToolbarHeight = DefaultToolbarHeight * InterfaceScale;
 	const ImVec2 WorkspaceSize = {
-		IO.DisplaySize.x,
-		std::max(0.0f, IO.DisplaySize.y - TitleBarHeight)
-	};
+	    IO.DisplaySize.x,
+	    std::max(0.0f, IO.DisplaySize.y - TitleBarHeight)};
 	const float DockspaceHeight = std::max(0.0f, WorkspaceSize.y - ToolbarHeight);
 
-	ImGui::SetNextWindowPos({ 0.0f, TitleBarHeight });
+	ImGui::SetNextWindowPos({0.0f, TitleBarHeight});
 	ImGui::SetNextWindowSize(WorkspaceSize);
 	ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
 	constexpr ImGuiWindowFlags HostFlags =
-		ImGuiWindowFlags_NoDecoration |
-		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoSavedSettings |
-		ImGuiWindowFlags_NoBringToFrontOnFocus |
-		ImGuiWindowFlags_NoNavFocus |
-		ImGuiWindowFlags_NoBackground;
+	    ImGuiWindowFlags_NoDecoration |
+	    ImGuiWindowFlags_NoMove |
+	    ImGuiWindowFlags_NoSavedSettings |
+	    ImGuiWindowFlags_NoBringToFrontOnFocus |
+	    ImGuiWindowFlags_NoNavFocus |
+	    ImGuiWindowFlags_NoBackground;
 
 	ImGui::Begin("WorkspaceHost", nullptr, HostFlags);
 	ImGui::PopStyleVar(3);
 	DrawWorkspaceToolbar(State, Resources.Fonts, ToolbarHeight);
-	ImGui::SetCursorPos({ 0.0f, ToolbarHeight });
+	ImGui::SetCursorPos({0.0f, ToolbarHeight});
 	const ImGuiID MainDockspaceId = ImGui::GetID(MainDockspaceName);
-	EnsureDefaultDockLayout(MainDockspaceId, { WorkspaceSize.x, DockspaceHeight });
+	EnsureDefaultDockLayout(MainDockspaceId, {WorkspaceSize.x, DockspaceHeight});
 	ImVec4 DockspaceBackground = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
 	DockspaceBackground.w = IsPanelTransparent(State.PanelTransparencyMode, true) ? 0.0f : 1.0f;
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, DockspaceBackground);
 	ImGui::DockSpace(
-		MainDockspaceId,
-		{ 0.0f, 0.0f },
-		ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_AutoHideTabBar);
+	    MainDockspaceId,
+	    {0.0f, 0.0f},
+	    ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_AutoHideTabBar);
 	ImGui::PopStyleColor();
 	ImGui::End();
 
 	const ImVec2 WelcomeSize = {
-		std::min(880.0f * InterfaceScale, std::max(320.0f, WorkspaceSize.x - 64.0f * InterfaceScale)),
-		std::min(590.0f * InterfaceScale, std::max(300.0f, DockspaceHeight - 64.0f * InterfaceScale))
-	};
+	    std::min(880.0f * InterfaceScale, std::max(320.0f, WorkspaceSize.x - 64.0f * InterfaceScale)),
+	    std::min(590.0f * InterfaceScale, std::max(300.0f, DockspaceHeight - 64.0f * InterfaceScale))};
 	ImGui::SetNextWindowSize(WelcomeSize, ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowPos(
-		{ WorkspaceSize.x * 0.5f, TitleBarHeight + ToolbarHeight + DockspaceHeight * 0.5f },
-		ImGuiCond_FirstUseEver,
-		{ 0.5f, 0.5f });
+	    {WorkspaceSize.x * 0.5f, TitleBarHeight + ToolbarHeight + DockspaceHeight * 0.5f},
+	    ImGuiCond_FirstUseEver,
+	    {0.5f, 0.5f});
 	SetNextPanelTransparency(State.PanelTransparencyMode, State.bStartPanelDocked);
 	ImGui::Begin("Start");
 	State.bStartPanelDocked = ImGui::IsWindowDocked();
 	DrawWorkspaceIntro(State, Resources.Fonts);
 
 	if (ImGui::GetContentRegionAvail().x >= 720.0f * InterfaceScale &&
-		ImGui::BeginTable("StarterCards", 2, ImGuiTableFlags_SizingStretchSame))
+	    ImGui::BeginTable("StarterCards", 2, ImGuiTableFlags_SizingStretchSame))
 	{
 		ImGui::TableNextColumn();
 		DrawProjectCard(State, Resources.Fonts);
@@ -1063,13 +1072,13 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 	else
 	{
 		DrawProjectCard(State, Resources.Fonts);
-		ImGui::Dummy({ 0.0f, 8.0f * InterfaceScale });
+		ImGui::Dummy({0.0f, 8.0f * InterfaceScale});
 		DrawBuildProfileCard(Resources.Fonts);
 	}
 
-	ImGui::Dummy({ 0.0f, 8.0f * InterfaceScale });
+	ImGui::Dummy({0.0f, 8.0f * InterfaceScale});
 	DrawAppearanceCard(State, Resources.Fonts);
-	ImGui::Dummy({ 0.0f, 4.0f * InterfaceScale });
+	ImGui::Dummy({0.0f, 4.0f * InterfaceScale});
 	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(Theme::Colors::Accent), "●");
 	ImGui::SameLine();
 	ImGui::TextUnformatted("Windows and Linux workspace ready");
@@ -1115,11 +1124,11 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 		ImGui::GetStyle() = Runtime.BaseStyle;
 		ImGui::GetStyle().ScaleAllSizes(ContentScale);
 		glfwSetWindowSizeLimits(
-			Window,
-			ScaleTitleBarMetric(480, ContentScale),
-			ScaleTitleBarMetric(320, ContentScale),
-			GLFW_DONT_CARE,
-			GLFW_DONT_CARE);
+		    Window,
+		    ScaleTitleBarMetric(480, ContentScale),
+		    ScaleTitleBarMetric(320, ContentScale),
+		    GLFW_DONT_CARE,
+		    GLFW_DONT_CARE);
 		Runtime.PreviousContentScale = ContentScale;
 	}
 	Theme::ApplyInteractiveColors(ImGui::GetStyle(), ResolveBackgroundAccent(Runtime.Ui));
@@ -1201,7 +1210,7 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 	glfwWindowHint(GLFW_TITLEBAR, GLFW_FALSE);
 	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-	FWindowPlacement InitialWindowPlacement = { 0, 0, DefaultWindowWidth, DefaultWindowHeight };
+	FWindowPlacement InitialWindowPlacement = {0, 0, DefaultWindowWidth, DefaultWindowHeight};
 	bool bHasMonitorWorkArea = false;
 	if (GLFWmonitor* const PrimaryMonitor = glfwGetPrimaryMonitor())
 	{
@@ -1213,11 +1222,11 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 		if (WorkAreaWidth > 0 && WorkAreaHeight > 0)
 		{
 			InitialWindowPlacement = ResolveCenteredWindowPlacement(
-				WorkAreaX,
-				WorkAreaY,
-				WorkAreaWidth,
-				WorkAreaHeight,
-				InitialWindowWorkAreaPercent);
+			    WorkAreaX,
+			    WorkAreaY,
+			    WorkAreaWidth,
+			    WorkAreaHeight,
+			    InitialWindowWorkAreaPercent);
 			bHasMonitorWorkArea = true;
 		}
 	}
@@ -1239,9 +1248,9 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 	FWindowState& WindowState = Runtime.Window;
 	WindowState.bWayland = glfwGetPlatform() == GLFW_PLATFORM_WAYLAND;
 	glfwGetWindowSize(
-		Window,
-		&WindowState.TitleBar.WindowWidth,
-		&WindowState.TitleBar.WindowHeight);
+	    Window,
+	    &WindowState.TitleBar.WindowWidth,
+	    &WindowState.TitleBar.WindowHeight);
 	WindowState.TitleBar.bResizable = glfwGetWindowAttrib(Window, GLFW_RESIZABLE) == GLFW_TRUE;
 	WindowState.TitleBar.bMaximized = glfwGetWindowAttrib(Window, GLFW_MAXIMIZED) == GLFW_TRUE;
 	WindowState.bFocused = glfwGetWindowAttrib(Window, GLFW_FOCUSED) == GLFW_TRUE;
@@ -1259,11 +1268,11 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 	glfwSetCursorEnterCallback(Window, CursorEnterCallback);
 	glfwSetCursorPosCallback(Window, CursorPositionCallback);
 	glfwSetWindowSizeLimits(
-		Window,
-		ScaleTitleBarMetric(480, WindowState.UiScale),
-		ScaleTitleBarMetric(320, WindowState.UiScale),
-		GLFW_DONT_CARE,
-		GLFW_DONT_CARE);
+	    Window,
+	    ScaleTitleBarMetric(480, WindowState.UiScale),
+	    ScaleTitleBarMetric(320, WindowState.UiScale),
+	    GLFW_DONT_CARE,
+	    GLFW_DONT_CARE);
 	glfwSetWindowHitTestCallback(Window, TitleBarHitTestCallback);
 	glfwMakeContextCurrent(Window);
 	glfwSwapInterval(1);

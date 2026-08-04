@@ -72,18 +72,18 @@ private:
 {
 	switch (Level)
 	{
-	case ELogLevel::Trace:
-		return "Trace";
-	case ELogLevel::Debug:
-		return "Debug";
-	case ELogLevel::Info:
-		return "Info";
-	case ELogLevel::Warning:
-		return "Warning";
-	case ELogLevel::Error:
-		return "Error";
-	case ELogLevel::Count:
-		break;
+		case ELogLevel::Trace:
+			return "Trace";
+		case ELogLevel::Debug:
+			return "Debug";
+		case ELogLevel::Info:
+			return "Info";
+		case ELogLevel::Warning:
+			return "Warning";
+		case ELogLevel::Error:
+			return "Error";
+		case ELogLevel::Count:
+			break;
 	}
 
 	return "Unknown";

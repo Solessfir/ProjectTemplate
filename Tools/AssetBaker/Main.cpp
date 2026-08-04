@@ -56,9 +56,9 @@ int main(const int ArgumentCount, char** const Arguments)
 	}
 
 	const std::expected<void, ProjectTemplate::AssetBake::FError> Result = ProjectTemplate::AssetBake::Bake(
-		ParsedArguments.ManifestPath,
-		ParsedArguments.AssetRoot,
-		ParsedArguments.OutputPath);
+	    ParsedArguments.ManifestPath,
+	    ParsedArguments.AssetRoot,
+	    ParsedArguments.OutputPath);
 	if (!Result)
 	{
 		std::println(stderr, "Asset baking failed: {}", Result.error().Message);

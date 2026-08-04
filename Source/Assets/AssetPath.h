@@ -36,7 +36,7 @@ namespace ProjectTemplate
 	{
 		const std::size_t SegmentEnd = NormalizedPath.find('/', SegmentStart);
 		const std::size_t SegmentLength =
-			(SegmentEnd == std::string::npos ? NormalizedPath.size() : SegmentEnd) - SegmentStart;
+		    (SegmentEnd == std::string::npos ? NormalizedPath.size() : SegmentEnd) - SegmentStart;
 		const std::string_view Segment(NormalizedPath.data() + SegmentStart, SegmentLength);
 
 		if (Segment.empty() || Segment == "." || Segment == "..")

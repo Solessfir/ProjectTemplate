@@ -75,7 +75,7 @@ private:
 	std::vector<std::string_view> CommandSuggestions;
 	std::array<char, 256> SearchBuffer = {};
 	std::array<char, 512> CommandBuffer = {};
-	std::array<bool, static_cast<std::size_t>(ELogLevel::Count)> bLevelVisible = { true, true, true, true, true };
+	std::array<bool, static_cast<std::size_t>(ELogLevel::Count)> bLevelVisible = {true, true, true, true, true};
 	FLogTextSelection TextSelection;
 	int CommandHistoryIndex = -1;
 	int CommandSuggestionIndex = -1;

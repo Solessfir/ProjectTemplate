@@ -1,11 +1,10 @@
-#include <doctest/doctest.h>
-
 #include "AssetBake.h"
 #include "Assets/AssetPath.h"
 #include "Assets/AssetProvider.h"
 
 #include <array>
 #include <cstddef>
+#include <doctest/doctest.h>
 #include <string>
 
 using ProjectTemplate::EAssetLoadError;
@@ -26,9 +25,9 @@ TEST_CASE("Virtual asset paths are normalized without allowing traversal")
 TEST_CASE("Asset manifests ignore comments and produce stable order")
 {
 	const auto Result = ParseManifest(
-		"# Embedded application resources\n"
-		"Icons/App.svg\n"
-		"Fonts/Roboto.ttf\r\n");
+	    "# Embedded application resources\n"
+	    "Icons/App.svg\n"
+	    "Fonts/Roboto.ttf\r\n");
 
 	REQUIRE(Result);
 	REQUIRE(Result->size() == 2);
@@ -47,10 +46,9 @@ TEST_CASE("Asset manifests reject duplicate paths after normalization")
 TEST_CASE("Generated asset source is deterministic and preserves binary bytes")
 {
 	const std::array Assets = {
-		FAsset{ .VirtualPath = "Second.bin", .Bytes = { static_cast<char>(0xff), static_cast<char>(0x7f) } },
-		FAsset{ .VirtualPath = "First.bin", .Bytes = { static_cast<char>(0x00), static_cast<char>(0x01) } }
-	};
-	const std::array ReversedAssets = { Assets[1], Assets[0] };
+	    FAsset{.VirtualPath = "Second.bin", .Bytes = {static_cast<char>(0xff), static_cast<char>(0x7f)}},
+	    FAsset{.VirtualPath = "First.bin", .Bytes = {static_cast<char>(0x00), static_cast<char>(0x01)}}};
+	const std::array ReversedAssets = {Assets[1], Assets[0]};
 
 	const auto FirstSource = GenerateSource(Assets);
 	const auto SecondSource = GenerateSource(ReversedAssets);
