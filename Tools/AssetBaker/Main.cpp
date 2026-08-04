@@ -70,7 +70,7 @@ struct FArguments
 }
 }
 
-int main(const int ArgumentCount, char** const Arguments)
+int main(const int ArgumentCount, char** const Arguments) noexcept
 {
 	try
 	{
