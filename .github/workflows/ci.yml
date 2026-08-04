@@ -29,6 +29,7 @@ jobs:
           - name: Windows MSVC 2022 Development
             runner: windows-2022
             platform: windows
+            compiler: msvc
             configuration: Development
             visual_studio_version: 2022
             premake_action: vs2022
@@ -36,6 +37,7 @@ jobs:
           - name: Windows MSVC 2026 Shipping
             runner: windows-2025-vs2026
             platform: windows
+            compiler: msvc
             configuration: Shipping
             visual_studio_version: 2026
             premake_action: vs2026
@@ -43,6 +45,7 @@ jobs:
           - name: Linux GCC Development
             runner: ubuntu-24.04
             platform: linux
+            compiler: gcc
             configuration: Development
             cc: gcc-14
             cxx: g++-14
@@ -51,9 +54,10 @@ jobs:
           - name: Linux Clang Shipping
             runner: ubuntu-24.04
             platform: linux
+            compiler: clang
             configuration: Shipping
-            cc: clang
-            cxx: clang++
+            cc: clang-19
+            cxx: clang++-19
             cxxflags: -stdlib=libc++
             ldflags: -stdlib=libc++
 
@@ -65,6 +69,13 @@ jobs:
           persist-credentials: false
           submodules: recursive
 
+      - name: Restore project-local tools
+        id: bootstrap-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: External/Premake
+          key: ${{ runner.os }}-project-template-bootstrap-v2-${{ hashFiles('Config/Dependencies.lock', 'Scripts/Setup.*', 'Scripts/DependencyLock.*') }}
+
       - name: Install Linux window-system packages
         if: matrix.platform == 'linux'
         shell: bash
@@ -73,7 +84,7 @@ jobs:
           sudo apt-get install -y
           gcc-14
           g++-14
-          clang
+          clang-19
           libc++-dev
           libc++abi-dev
           libgl1-mesa-dev
@@ -131,7 +142,17 @@ jobs:
       - name: Run tests on Windows
         if: matrix.platform == 'windows'
         shell: pwsh
-        run: .\Binaries\Windows\x86_64\${{ matrix.configuration }}\StarterTests.exe
+        timeout-minutes: 3
+        run: |
+          $TestResults = 'TestResults/${{ matrix.platform }}-${{ matrix.compiler }}-${{ matrix.configuration }}.xml'
+          New-Item -ItemType Directory -Force -Path (Split-Path -Parent $TestResults) | Out-Null
+          & .\Binaries\Windows\x86_64\${{ matrix.configuration }}\StarterTests.exe --duration=true
+          $ConsoleExitCode = $LASTEXITCODE
+          & .\Binaries\Windows\x86_64\${{ matrix.configuration }}\StarterTests.exe --reporters=junit --out=$TestResults
+          if ($ConsoleExitCode -ne 0) {
+            exit $ConsoleExitCode
+          }
+          exit $LASTEXITCODE
 
       - name: Set up project on Linux
         if: matrix.platform == 'linux'
@@ -169,11 +190,28 @@ jobs:
             CXXFLAGS="${CXXFLAGS}" \
             LDFLAGS="${LDFLAGS}"
 
-      - name: Run tests and X11 application smoke test on Linux
+      - name: Run tests on Linux
         if: matrix.platform == 'linux'
         shell: bash
+        timeout-minutes: 3
         run: |
-          ./Binaries/Linux/x86_64/${{ matrix.configuration }}/StarterTests
+          set +e
+          TestResults="TestResults/${{ matrix.platform }}-${{ matrix.compiler }}-${{ matrix.configuration }}.xml"
+          mkdir -p -- "$(dirname -- "$TestResults")"
+          ./Binaries/Linux/x86_64/${{ matrix.configuration }}/StarterTests --duration=true
+          ConsoleExitCode=$?
+          ./Binaries/Linux/x86_64/${{ matrix.configuration }}/StarterTests --reporters=junit --out="$TestResults"
+          JunitExitCode=$?
+          if [[ $ConsoleExitCode -ne 0 ]]; then
+            exit "$ConsoleExitCode"
+          fi
+          exit "$JunitExitCode"
+
+      - name: Run X11 application smoke test on Linux
+        if: matrix.platform == 'linux'
+        shell: bash
+        timeout-minutes: 2
+        run: |
           xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 \
             ./Binaries/Linux/x86_64/${{ matrix.configuration }}/StarterApp \
             --smoke-test --platform=x11
@@ -181,6 +219,7 @@ jobs:
       - name: Run Wayland application smoke test on Linux
         if: matrix.platform == 'linux'
         shell: bash
+        timeout-minutes: 2
         run: |
           set -euo pipefail
           RuntimeDirectory="$(mktemp -d)"
@@ -211,6 +250,22 @@ jobs:
           DISPLAY= WAYLAND_DISPLAY=wayland-ci LIBGL_ALWAYS_SOFTWARE=1 \
             ./Binaries/Linux/x86_64/${{ matrix.configuration }}/StarterApp \
             --smoke-test --platform=wayland
+
+      - name: Save project-local tools
+        if: github.event_name != 'pull_request' && steps.bootstrap-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: External/Premake
+          key: ${{ runner.os }}-project-template-bootstrap-v2-${{ hashFiles('Config/Dependencies.lock', 'Scripts/Setup.*', 'Scripts/DependencyLock.*') }}
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tests-${{ matrix.platform }}-${{ matrix.compiler }}-${{ matrix.configuration }}-${{ github.sha }}
+          path: TestResults
+          if-no-files-found: ignore
+          retention-days: 7
 
   required:
     name: required

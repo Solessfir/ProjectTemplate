@@ -29,7 +29,7 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - Event-driven minimized state that suspends UI polling and rendering until the window wakes
 - Title-bar application menu for the Output Log, components, licenses, and exit
 - Windows and Linux GitHub Actions builds
-- CodeQL, dependency review, and Dependabot configuration
+- Formatting, Clang-Tidy, CodeQL, dependency review, and Dependabot quality gates
 
 Source dependencies are pinned Git submodules. Normal project generation and builds do not access the network.
 
@@ -98,11 +98,11 @@ bash ./GenerateProjectFiles.sh
 make --directory=Intermediate/ProjectFiles/gmake --jobs=2 config=development CC="$CC" CXX="$CXX"
 ```
 
-For Clang builds on Ubuntu 24.04, use libc++ so the selected standard library provides the required C++23 surface:
+For Clang builds on Ubuntu 24.04, use Clang 19 with libc++ so the selected standard library provides the required C++23 surface:
 
 ```bash
-sudo apt-get install -y clang libc++-dev libc++abi-dev
-export CC=clang CXX=clang++ CXXFLAGS=-stdlib=libc++ LDFLAGS=-stdlib=libc++
+sudo apt-get install -y clang-19 libc++-dev libc++abi-dev
+export CC=clang-19 CXX=clang++-19 CXXFLAGS=-stdlib=libc++ LDFLAGS=-stdlib=libc++
 bash ./Setup.sh
 bash ./GenerateProjectFiles.sh
 make --directory=Intermediate/ProjectFiles/gmake --jobs=2 config=development CC="$CC" CXX="$CXX"

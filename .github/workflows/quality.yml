@@ -1,0 +1,215 @@
+name: Quality
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  merge_group:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  bootstrap-windows:
+    name: Bootstrap tests - Windows
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 5
+    steps:
+      - name: Check out project
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+
+      - name: Test bootstrap scripts
+        shell: pwsh
+        run: |
+          ./Scripts/Tests/DependencyLock.Tests.ps1
+          ./Setup.bat -ValidateOnly
+          ./Cleanup.bat -WhatIf
+
+  bootstrap-linux:
+    name: Bootstrap tests - Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out project
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+
+      - name: Test bootstrap scripts
+        shell: bash
+        run: |
+          ./Scripts/Tests/DependencyLock.Tests.sh
+          ./Setup.sh --validate-only
+          ./Cleanup.sh --dry-run
+
+  formatting:
+    name: Formatting and repository hygiene
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out project
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+
+      - name: Check whitespace
+        shell: bash
+        run: git diff --check "$(git hash-object -t tree /dev/null)" HEAD
+
+      - name: Check ignored files are not tracked
+        shell: bash
+        run: test -z "$(git ls-files --cached --ignored --exclude-standard)"
+
+      - name: Check workflow action pins
+        shell: bash
+        run: |
+          Failed=0
+          while IFS= read -r Usage; do
+            if [[ "$Usage" == ./* ]]; then
+              continue
+            fi
+
+            Revision="${Usage##*@}"
+            if [[ ! "$Revision" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "Action is not pinned to a full commit SHA: $Usage"
+              Failed=1
+            fi
+          done < <(find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) -print0 |
+            xargs -0 -r sed -nE 's/^[[:space:]]*uses:[[:space:]]*([^[:space:]#]+).*/\1/p')
+          exit "$Failed"
+
+      - name: Check C and C++ formatting
+        shell: bash
+        run: |
+          clang-format-18 --version
+          git ls-files -z -- \
+            ':(glob)Source/**/*.c' \
+            ':(glob)Source/**/*.cc' \
+            ':(glob)Source/**/*.cpp' \
+            ':(glob)Source/**/*.h' \
+            ':(glob)Source/**/*.hpp' \
+            ':(glob)Tests/**/*.c' \
+            ':(glob)Tests/**/*.cc' \
+            ':(glob)Tests/**/*.cpp' \
+            ':(glob)Tests/**/*.h' \
+            ':(glob)Tests/**/*.hpp' \
+            ':(glob)Tools/**/*.c' \
+            ':(glob)Tools/**/*.cc' \
+            ':(glob)Tools/**/*.cpp' \
+            ':(glob)Tools/**/*.h' \
+            ':(glob)Tools/**/*.hpp' \
+            | xargs -0 -r clang-format-18 -i
+          git diff --exit-code
+
+  clang-tidy:
+    name: Clang-Tidy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out project
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Restore project-local tools
+        id: bootstrap-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: External/Premake
+          key: ${{ runner.os }}-project-template-bootstrap-v2-${{ hashFiles('Config/Dependencies.lock', 'Scripts/Setup.*', 'Scripts/DependencyLock.*') }}
+
+      - name: Install compilation database capture
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bear clang-19 clang-tidy-19 gcc-14 g++-14 pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libwayland-bin libxkbcommon-dev wayland-protocols
+
+      - name: Set up project
+        shell: bash
+        env:
+          CC: clang-19
+          CXX: clang++-19
+        run: bash ./Setup.sh
+
+      - name: Generate GNU Make projects
+        shell: bash
+        env:
+          CC: clang-19
+          CXX: clang++-19
+        run: bash ./GenerateProjectFiles.sh
+
+      - name: Analyze project sources
+        shell: bash
+        env:
+          CC: clang-19
+          CXX: clang++-19
+        run: |
+          clang-tidy-19 --version
+          bear --output compile_commands.json -- \
+            make --directory=Intermediate/ProjectFiles/gmake \
+              --jobs=2 \
+              config=development \
+              AssetBaker \
+              StarterTests \
+              StarterApp
+          test -s compile_commands.json
+          mapfile -d '' Sources < <(git ls-files -z -- \
+            ':(glob)Source/**/*.cpp' \
+            ':(glob)Tests/**/*.cpp' \
+            ':(glob)Tools/**/*.cpp')
+          test "${#Sources[@]}" -gt 0
+          clang-tidy-19 \
+            --config-file=.clang-tidy \
+            -p=. \
+            "${Sources[@]}"
+
+      - name: Save project-local tools
+        if: github.event_name != 'pull_request' && steps.bootstrap-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: External/Premake
+          key: ${{ runner.os }}-project-template-bootstrap-v2-${{ hashFiles('Config/Dependencies.lock', 'Scripts/Setup.*', 'Scripts/DependencyLock.*') }}
+
+  required:
+    name: required
+    if: ${{ always() }}
+    needs:
+      - bootstrap-windows
+      - bootstrap-linux
+      - formatting
+      - clang-tidy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every quality check
+        shell: bash
+        env:
+          BOOTSTRAP_WINDOWS_RESULT: ${{ needs.bootstrap-windows.result }}
+          BOOTSTRAP_LINUX_RESULT: ${{ needs.bootstrap-linux.result }}
+          FORMATTING_RESULT: ${{ needs.formatting.result }}
+          CLANG_TIDY_RESULT: ${{ needs.clang-tidy.result }}
+        run: |
+          test "$BOOTSTRAP_WINDOWS_RESULT" = success
+          test "$BOOTSTRAP_LINUX_RESULT" = success
+          test "$FORMATTING_RESULT" = success
+          test "$CLANG_TIDY_RESULT" = success

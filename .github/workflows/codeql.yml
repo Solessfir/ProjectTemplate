@@ -38,6 +38,13 @@ jobs:
           persist-credentials: false
           submodules: recursive
 
+      - name: Restore project-local tools
+        id: bootstrap-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: External/Premake
+          key: ${{ runner.os }}-project-template-bootstrap-v2-${{ hashFiles('Config/Dependencies.lock', 'Scripts/Setup.*', 'Scripts/DependencyLock.*') }}
+
       - name: Install Linux window-system packages
         shell: bash
         run: >-
@@ -56,7 +63,7 @@ jobs:
           wayland-protocols
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        uses: github/codeql-action/init@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
         with:
           languages: c-cpp
           build-mode: manual
@@ -84,6 +91,13 @@ jobs:
           CXX="${CXX}"
 
       - name: Analyze project
-        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        uses: github/codeql-action/analyze@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
         with:
           category: /language:c-cpp
+
+      - name: Save project-local tools
+        if: github.event_name != 'pull_request' && steps.bootstrap-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: External/Premake
+          key: ${{ runner.os }}-project-template-bootstrap-v2-${{ hashFiles('Config/Dependencies.lock', 'Scripts/Setup.*', 'Scripts/DependencyLock.*') }}

@@ -67,8 +67,8 @@ print_prerequisite_command() {
             ;;
         *ubuntu*)
             if [[ "${selected_cxx}" == *clang++* ]]; then
-                echo 'Install required packages with: sudo apt-get update && sudo apt-get install -y clang libc++-dev libc++abi-dev git make curl pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols' >&2
-                echo 'Then select Clang with: export CC=clang CXX=clang++ CXXFLAGS=-stdlib=libc++ LDFLAGS=-stdlib=libc++' >&2
+                echo 'Install required packages with: sudo apt-get update && sudo apt-get install -y clang-19 libc++-dev libc++abi-dev git make curl pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols' >&2
+                echo 'Then select Clang 19 with: export CC=clang-19 CXX=clang++-19 CXXFLAGS=-stdlib=libc++ LDFLAGS=-stdlib=libc++' >&2
             else
                 echo 'Install required packages with: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 git make curl pkg-config libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols' >&2
                 echo 'Then select GCC 14 with: export CC=gcc-14 CXX=g++-14' >&2
