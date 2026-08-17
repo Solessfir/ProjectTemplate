@@ -23,5 +23,9 @@ case "${compiler_name}" in
     *) echo "Unsupported C++ compiler '${compiler_path}'. Use GCC or Clang." >&2; exit 2 ;;
 esac
 
-premake_path="$("${root_dir}/Scripts/Setup.sh" --print-premake-path)"
+if ! premake_path="$("${root_dir}/Scripts/Setup.sh" --print-premake-path 2>/dev/null)"; then
+    echo 'Could not find project-local Premake. Run Setup.sh first.' >&2
+    exit 1
+fi
+
 "${premake_path}" --file="${root_dir}/premake5.lua" --cc="${premake_compiler}" "${action}"

@@ -59,6 +59,8 @@ GenerateProjectFiles.bat
 
 The selected `ProjectTemplate.slnx` or `ProjectTemplate.sln` is generated at the repository root. Supporting Visual Studio project files remain under `Intermediate\ProjectFiles`.
 
+Windows project generation pauses on errors when run interactively. Automation remains non-blocking when `CI` or `PROJECTTEMPLATE_NO_PAUSE` is defined.
+
 Pass a version explicitly when fallback is not wanted:
 
 ```bat
