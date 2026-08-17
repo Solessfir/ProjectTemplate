@@ -48,13 +48,12 @@ constexpr const char* BuildConfiguration = "Unknown";
 
 struct FWindowState
 {
-	FTitleBarLayout TitleBar;
+	FTitleBarHitTestState TitleBarHitTest;
 	float UiScale = 1.0f;
 	double CursorX = 0.0;
 	double CursorY = 0.0;
 	bool bFocused = true;
 	bool bCursorInside = false;
-	bool bUiCapturesMouse = false;
 	bool bWayland = false;
 };
 
@@ -239,21 +238,64 @@ void GlfwErrorCallback(const int Error, const char* const Description)
 	return Runtime == nullptr ? nullptr : &Runtime->Window;
 }
 
+void UpdateTitleBarUiCaptureRegions(FWindowState& State)
+{
+	FTitleBarHitTestState& HitTestState = State.TitleBarHitTest;
+	HitTestState.UiCaptureRegionCount = 0;
+	HitTestState.bUiCapturesEntireTitleBar = false;
+
+	const ImGuiViewport& Viewport = *ImGui::GetMainViewport();
+	const FTitleBarLayout& Layout = HitTestState.Layout;
+	const ImRect TitleBarRect{
+	    Viewport.Pos,
+	    {Viewport.Pos.x + static_cast<float>(Layout.WindowWidth), Viewport.Pos.y + static_cast<float>(Layout.TitleBarHeight)}};
+	const ImGuiContext& Context = *ImGui::GetCurrentContext();
+	for (const ImGuiWindow* const UiWindow : Context.Windows)
+	{
+		if (!UiWindow->Active || UiWindow->Hidden || UiWindow->Viewport != &Viewport || (UiWindow->Flags & ImGuiWindowFlags_NoMouseInputs) != 0)
+		{
+			continue;
+		}
+
+		const ImRect Intersection{
+		    {std::max(UiWindow->OuterRectClipped.Min.x, TitleBarRect.Min.x), std::max(UiWindow->OuterRectClipped.Min.y, TitleBarRect.Min.y)},
+		    {std::min(UiWindow->OuterRectClipped.Max.x, TitleBarRect.Max.x), std::min(UiWindow->OuterRectClipped.Max.y, TitleBarRect.Max.y)}};
+		if (Intersection.Min.x >= Intersection.Max.x || Intersection.Min.y >= Intersection.Max.y)
+		{
+			continue;
+		}
+
+		if (HitTestState.UiCaptureRegionCount >= HitTestState.UiCaptureRegions.size())
+		{
+			// Losing caption dragging is safer than sending a UI click to native window chrome.
+			HitTestState.UiCaptureRegionCount = 0;
+			HitTestState.bUiCapturesEntireTitleBar = true;
+			break;
+		}
+
+		HitTestState.UiCaptureRegions[HitTestState.UiCaptureRegionCount++] = {
+		    .MinimumX = std::clamp(static_cast<int>(std::floor(Intersection.Min.x - Viewport.Pos.x)), 0, Layout.WindowWidth),
+		    .MinimumY = std::clamp(static_cast<int>(std::floor(Intersection.Min.y - Viewport.Pos.y)), 0, Layout.TitleBarHeight),
+		    .MaximumX = std::clamp(static_cast<int>(std::ceil(Intersection.Max.x - Viewport.Pos.x)), 0, Layout.WindowWidth),
+		    .MaximumY = std::clamp(static_cast<int>(std::ceil(Intersection.Max.y - Viewport.Pos.y)), 0, Layout.TitleBarHeight)};
+	}
+}
+
 void UpdateTitleBarScale(FWindowState& State, const float ContentScale)
 {
 	// Wayland window and cursor coordinates are already logical units.
 	State.UiScale = ResolveTitleBarUiScale(State.bWayland, ContentScale);
-	State.TitleBar.TitleBarHeight = ScaleTitleBarMetric(DefaultTitleBarHeight, State.UiScale);
-	State.TitleBar.ButtonWidth = ScaleTitleBarMetric(46, State.UiScale);
-	State.TitleBar.ResizeBorder = ScaleTitleBarMetric(6, State.UiScale);
+	State.TitleBarHitTest.Layout.TitleBarHeight = ScaleTitleBarMetric(DefaultTitleBarHeight, State.UiScale);
+	State.TitleBarHitTest.Layout.ButtonWidth = ScaleTitleBarMetric(46, State.UiScale);
+	State.TitleBarHitTest.Layout.ResizeBorder = ScaleTitleBarMetric(6, State.UiScale);
 }
 
 void WindowSizeCallback(GLFWwindow* const Window, const int Width, const int Height)
 {
 	if (FWindowState* const State = GetWindowState(Window))
 	{
-		State->TitleBar.WindowWidth = Width;
-		State->TitleBar.WindowHeight = Height;
+		State->TitleBarHitTest.Layout.WindowWidth = Width;
+		State->TitleBarHitTest.Layout.WindowHeight = Height;
 	}
 }
 
@@ -270,7 +312,7 @@ void WindowMaximizeCallback(GLFWwindow* const Window, const int bMaximized)
 {
 	if (FWindowState* const State = GetWindowState(Window))
 	{
-		State->TitleBar.bMaximized = bMaximized == GLFW_TRUE;
+		State->TitleBarHitTest.Layout.bMaximized = bMaximized == GLFW_TRUE;
 	}
 }
 
@@ -289,6 +331,24 @@ void CursorPositionCallback(GLFWwindow* const Window, const double X, const doub
 		State->CursorX = X;
 		State->CursorY = Y;
 	}
+}
+
+void SynchronizeMousePositionBeforeButtonCallback(GLFWwindow* const Window, const int Button, const int Action, const int Modifiers)
+{
+	(void)Button;
+	(void)Action;
+	(void)Modifiers;
+	double CursorX = 0.0;
+	double CursorY = 0.0;
+	glfwGetCursorPos(Window, &CursorX, &CursorY);
+	if (FWindowState* const State = GetWindowState(Window))
+	{
+		State->CursorX = CursorX;
+		State->CursorY = CursorY;
+	}
+
+	// ImGui chains this callback before its button event, keeping the press paired with the cursor sample that produced it.
+	ImGui::GetIO().AddMousePosEvent(static_cast<float>(CursorX), static_cast<float>(CursorY));
 }
 
 void CursorEnterCallback(GLFWwindow* const Window, const int bEntered)
@@ -340,11 +400,10 @@ void CursorEnterCallback(GLFWwindow* const Window, const int bEntered)
 
 int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 {
-	// Native hit testing may run while GLFW dispatches events, so it uses capture state cached by the last ImGui frame.
 	const FWindowState* const State = GetWindowState(Window);
 	return State == nullptr
 	           ? GLFW_HIT_TEST_CLIENT
-	           : ToGlfwHitTest(HitTestTitleBar(State->TitleBar, X, Y, State->bUiCapturesMouse));
+	           : ToGlfwHitTest(HitTestTitleBar(State->TitleBarHitTest, X, Y));
 }
 
 [[nodiscard]] ETitleBarHitRegion GetHoveredRegion(const FWindowState& State)
@@ -354,11 +413,7 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 		return ETitleBarHitRegion::Client;
 	}
 
-	return HitTestTitleBar(
-	    State.TitleBar,
-	    static_cast<int>(State.CursorX),
-	    static_cast<int>(State.CursorY),
-	    State.bUiCapturesMouse);
+	return HitTestTitleBar(State.TitleBarHitTest, static_cast<int>(State.CursorX), static_cast<int>(State.CursorY));
 }
 
 [[nodiscard]] ImU32 ApplySaturation(const ImU32 Color, const float SaturationScale)
@@ -426,7 +481,7 @@ void DrawRestoreGlyph(ImDrawList& DrawList, const ImVec2 Center, const float Sca
 
 void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 {
-	const FTitleBarLayout& Layout = State.TitleBar;
+	const FTitleBarLayout& Layout = State.TitleBarHitTest.Layout;
 	ImDrawList& DrawList = *ImGui::GetBackgroundDrawList();
 	const float Width = static_cast<float>(Layout.WindowWidth);
 	const float Height = static_cast<float>(Layout.TitleBarHeight);
@@ -1127,11 +1182,11 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	Runtime.Window.bUiCapturesMouse = ImGui::GetIO().WantCaptureMouse;
 
 	DrawTitleBar(Runtime.Window, Runtime.Resources->Fonts);
-	DrawWorkspace(Runtime.Window.TitleBar, *Runtime.Resources, Runtime.Ui, Runtime.OutputLog);
-	DrawApplicationMenu(Window, Runtime.Window.TitleBar, Runtime.Ui);
+	DrawWorkspace(Runtime.Window.TitleBarHitTest.Layout, *Runtime.Resources, Runtime.Ui, Runtime.OutputLog);
+	DrawApplicationMenu(Window, Runtime.Window.TitleBarHitTest.Layout, Runtime.Ui);
+	UpdateTitleBarUiCaptureRegions(Runtime.Window);
 
 	ImGui::Render();
 	int FramebufferWidth = 0;
@@ -1243,10 +1298,10 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 	WindowState.bWayland = glfwGetPlatform() == GLFW_PLATFORM_WAYLAND;
 	glfwGetWindowSize(
 	    Window,
-	    &WindowState.TitleBar.WindowWidth,
-	    &WindowState.TitleBar.WindowHeight);
-	WindowState.TitleBar.bResizable = glfwGetWindowAttrib(Window, GLFW_RESIZABLE) == GLFW_TRUE;
-	WindowState.TitleBar.bMaximized = glfwGetWindowAttrib(Window, GLFW_MAXIMIZED) == GLFW_TRUE;
+	    &WindowState.TitleBarHitTest.Layout.WindowWidth,
+	    &WindowState.TitleBarHitTest.Layout.WindowHeight);
+	WindowState.TitleBarHitTest.Layout.bResizable = glfwGetWindowAttrib(Window, GLFW_RESIZABLE) == GLFW_TRUE;
+	WindowState.TitleBarHitTest.Layout.bMaximized = glfwGetWindowAttrib(Window, GLFW_MAXIMIZED) == GLFW_TRUE;
 	WindowState.bFocused = glfwGetWindowAttrib(Window, GLFW_FOCUSED) == GLFW_TRUE;
 	WindowState.bCursorInside = glfwGetWindowAttrib(Window, GLFW_HOVERED) == GLFW_TRUE;
 	glfwGetCursorPos(Window, &WindowState.CursorX, &WindowState.CursorY);
@@ -1261,6 +1316,7 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 	glfwSetWindowFocusCallback(Window, WindowFocusCallback);
 	glfwSetCursorEnterCallback(Window, CursorEnterCallback);
 	glfwSetCursorPosCallback(Window, CursorPositionCallback);
+	glfwSetMouseButtonCallback(Window, SynchronizeMousePositionBeforeButtonCallback);
 	glfwSetWindowSizeLimits(
 	    Window,
 	    ScaleTitleBarMetric(480, WindowState.UiScale),
@@ -1326,7 +1382,7 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 		return 1;
 	}
 
-	Log::Info("Window", "Created a {} x {} main window", WindowState.TitleBar.WindowWidth, WindowState.TitleBar.WindowHeight);
+	Log::Info("Window", "Created a {} x {} main window", WindowState.TitleBarHitTest.Layout.WindowWidth, WindowState.TitleBarHitTest.Layout.WindowHeight);
 	Log::Info("Renderer", "OpenGL 3.3 rendering initialized");
 	Log::Info("UI", "Dear ImGui docking and custom title bar initialized");
 	Log::Info("Application", "Workspace ready. Type help in the Output Log for commands");
