@@ -71,10 +71,10 @@ void ApplyApplicationTheme(ImGuiStyle& Style)
 	Palette[ImGuiCol_FrameBg] = ToFloatColor(Colors::Surface1);
 	Palette[ImGuiCol_FrameBgHovered] = ToFloatColor(Colors::SurfaceHover);
 	Palette[ImGuiCol_FrameBgActive] = ToFloatColor(Colors::Surface2);
-	Palette[ImGuiCol_TitleBg] = ToFloatColor(Colors::ChromeOverlay);
-	Palette[ImGuiCol_TitleBgActive] = ToFloatColor(Colors::ChromeOverlay);
-	Palette[ImGuiCol_TitleBgCollapsed] = ToFloatColor(Colors::ChromeOverlay);
-	Palette[ImGuiCol_MenuBarBg] = ToFloatColor(Colors::ChromeOverlay);
+	Palette[ImGuiCol_TitleBg] = ToFloatColor(Colors::Surface0);
+	Palette[ImGuiCol_TitleBgActive] = ToFloatColor(Colors::Surface0);
+	Palette[ImGuiCol_TitleBgCollapsed] = ToFloatColor(Colors::Surface0);
+	Palette[ImGuiCol_MenuBarBg] = ToFloatColor(Colors::Surface0);
 	Palette[ImGuiCol_ScrollbarBg] = ToFloatColor(Colors::Surface0);
 	Palette[ImGuiCol_ScrollbarGrab] = ToFloatColor(Colors::Border);
 	Palette[ImGuiCol_ScrollbarGrabHovered] = ToFloatColor(Colors::TextMuted);

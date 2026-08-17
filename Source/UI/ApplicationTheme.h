@@ -7,7 +7,6 @@ namespace ProjectTemplate::Theme
 namespace Colors
 {
 inline constexpr ImU32 Canvas = IM_COL32(18, 18, 19, 255);
-inline constexpr ImU32 ChromeOverlay = IM_COL32(20, 20, 22, 48);
 inline constexpr ImU32 TitleBarControlHover = IM_COL32(255, 255, 255, 24);
 inline constexpr ImU32 Surface0 = IM_COL32(23, 23, 25, 255);
 inline constexpr ImU32 Surface1 = IM_COL32(28, 28, 30, 255);
