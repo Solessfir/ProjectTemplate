@@ -374,6 +374,7 @@ project "StarterTests"
         Root .. "/Source/Assets/AssetProvider.h",
         Root .. "/Source/Logging/Log.cpp",
         Root .. "/Source/Logging/Log.h",
+        Root .. "/Source/Rendering/BackgroundDither.h",
         Root .. "/Tools/AssetBaker/AssetBake.cpp",
         Root .. "/Tools/AssetBaker/AssetBake.h",
         Root .. "/Source/UI/LogTextSelection.h",

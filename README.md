@@ -18,7 +18,7 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - Roboto Regular and Medium loaded from loose or embedded assets
 - Replaceable application icon embedded into Windows builds
 - Centralized Dear ImGui palette, interaction, and rounding tokens
-- Live Start-page background presets and HSV color wheel with independent height, saturation, and intensity controls plus focus-aware desaturation
+- Live Start-page background presets and HSV color wheel with independent height, saturation, and intensity controls, focus-aware desaturation, and a static ordered dither that prevents 8-bit gradient banding
 - Panel transparency modes for all, floating-only, docked-only, or opaque panel backgrounds
 - Additively brightened interaction states derived from the selected background hue, with a dedicated red close-button state
 - Thread-safe bounded logging with a docked, searchable UE-style Output Log

@@ -3,6 +3,7 @@
 #include "Application/ApplicationPaths.h"
 #include "Assets/AssetProvider.h"
 #include "Logging/Log.h"
+#include "Rendering/BackgroundRenderer.h"
 #include "UI/ApplicationTheme.h"
 #include "UI/OutputLog.h"
 #include "UI/TitleBarLayout.h"
@@ -92,6 +93,7 @@ struct FApplicationRuntime
 	FWindowState Window;
 	FUiState Ui;
 	FOutputLogPanel OutputLog;
+	FBackgroundRenderer BackgroundRenderer;
 	const FApplicationResources* Resources = nullptr;
 	ImGuiStyle BaseStyle;
 	float PreviousContentScale = 0.0f;
@@ -359,16 +361,6 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 	    State.bUiCapturesMouse);
 }
 
-[[nodiscard]] ImU32 MixColors(const ImU32 Base, const ImU32 Tint, const float Strength)
-{
-	ImVec4 Result = ImGui::ColorConvertU32ToFloat4(Base);
-	const ImVec4 TintColor = ImGui::ColorConvertU32ToFloat4(Tint);
-	Result.x += (TintColor.x - Result.x) * Strength;
-	Result.y += (TintColor.y - Result.y) * Strength;
-	Result.z += (TintColor.z - Result.z) * Strength;
-	return ImGui::ColorConvertFloat4ToU32(Result);
-}
-
 [[nodiscard]] ImU32 ApplySaturation(const ImU32 Color, const float SaturationScale)
 {
 	ImVec4 Result = ImGui::ColorConvertU32ToFloat4(Color);
@@ -385,25 +377,18 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 	return ApplySaturation(ImGui::ColorConvertFloat4ToU32(State.BackgroundColor), State.BackgroundSaturation);
 }
 
-void DrawApplicationBackground(const FUiState& State, const bool bFocused)
+[[nodiscard]] FBackgroundGradient ResolveApplicationBackground(const FUiState& State, const bool bFocused)
 {
-	ImGuiViewport& Viewport = *ImGui::GetMainViewport();
-	const ImVec2 CanvasMin = Viewport.Pos;
-	const ImVec2 CanvasMax = {Viewport.Pos.x + Viewport.Size.x, Viewport.Pos.y + Viewport.Size.y};
-	const ImVec2 GradientMax = {CanvasMax.x, CanvasMin.y + Viewport.Size.y * State.GradientHeight};
 	const float FocusSaturation = bFocused ? State.BackgroundSaturation : State.BackgroundSaturation * Theme::Background::UnfocusedSaturationRatio;
 	const ImU32 GradientColor = ApplySaturation(ImGui::ColorConvertFloat4ToU32(State.BackgroundColor), FocusSaturation);
-	const ImU32 TopLeft = MixColors(Theme::Colors::Canvas, GradientColor, State.BackgroundIntensity);
-	const ImU32 TopRight = MixColors(Theme::Colors::Canvas, GradientColor, State.BackgroundIntensity * Theme::Background::TrailingIntensityRatio);
-	ImDrawList& DrawList = *ImGui::GetBackgroundDrawList(&Viewport);
-	DrawList.AddRectFilled(CanvasMin, CanvasMax, Theme::Colors::Canvas);
-	DrawList.AddRectFilledMultiColor(
-	    CanvasMin,
-	    GradientMax,
-	    TopLeft,
-	    TopRight,
-	    Theme::Colors::Canvas,
-	    Theme::Colors::Canvas);
+	const ImVec4 Accent = ImGui::ColorConvertU32ToFloat4(GradientColor);
+	return {
+	    .AccentRed = Accent.x,
+	    .AccentGreen = Accent.y,
+	    .AccentBlue = Accent.z,
+	    .HeightRatio = State.GradientHeight,
+	    .Intensity = State.BackgroundIntensity,
+	    .TrailingIntensityRatio = Theme::Background::TrailingIntensityRatio};
 }
 
 void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const float Top, const float Width, const float Height, const bool bHovered, const bool bCloseButton)
@@ -1144,7 +1129,6 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 	ImGui::NewFrame();
 	Runtime.Window.bUiCapturesMouse = ImGui::GetIO().WantCaptureMouse;
 
-	DrawApplicationBackground(Runtime.Ui, Runtime.Window.bFocused);
 	DrawTitleBar(Runtime.Window, Runtime.Resources->Fonts);
 	DrawWorkspace(Runtime.Window.TitleBar, *Runtime.Resources, Runtime.Ui, Runtime.OutputLog);
 	DrawApplicationMenu(Window, Runtime.Window.TitleBar, Runtime.Ui);
@@ -1156,6 +1140,10 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 	glViewport(0, 0, FramebufferWidth, FramebufferHeight);
 	glClearColor(18.0f / 255.0f, 18.0f / 255.0f, 19.0f / 255.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
+	Runtime.BackgroundRenderer.Render(
+	    FramebufferWidth,
+	    FramebufferHeight,
+	    ResolveApplicationBackground(Runtime.Ui, Runtime.Window.bFocused));
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(Window);
 	Runtime.bRenderingFrame = false;
@@ -1326,6 +1314,17 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 		glfwTerminate();
 		return 1;
 	}
+	const std::expected<void, std::string> BackgroundRendererInitialized = Runtime.BackgroundRenderer.Initialize();
+	if (!BackgroundRendererInitialized)
+	{
+		Log::Error("Renderer", "Could not initialize the background renderer: {}", BackgroundRendererInitialized.error());
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+		glfwDestroyWindow(Window);
+		glfwTerminate();
+		return 1;
+	}
 
 	Log::Info("Window", "Created a {} x {} main window", WindowState.TitleBar.WindowWidth, WindowState.TitleBar.WindowHeight);
 	Log::Info("Renderer", "OpenGL 3.3 rendering initialized");
@@ -1354,6 +1353,7 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 
 	Runtime.bRendererReady = false;
 	glfwSetWindowRefreshCallback(Window, nullptr);
+	Runtime.BackgroundRenderer.Shutdown();
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
