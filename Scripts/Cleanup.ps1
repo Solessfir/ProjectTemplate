@@ -24,7 +24,23 @@ function Remove-ProjectPath {
 
     $RelativePath = $ResolvedPath.Substring($RepositoryPrefix.Length)
     if ($PSCmdlet.ShouldProcess($RelativePath, 'Remove generated project state')) {
-        Remove-Item -LiteralPath $ResolvedPath -Recurse -Force
+        $MaximumAttempts = 4
+        for ($Attempt = 1; $Attempt -le $MaximumAttempts; ++$Attempt) {
+            try {
+                if (Test-Path -LiteralPath $ResolvedPath) {
+                    Remove-Item -LiteralPath $ResolvedPath -Recurse -Force
+                }
+                break
+            }
+            catch [System.UnauthorizedAccessException], [System.IO.IOException] {
+                if ($Attempt -eq $MaximumAttempts) {
+                    throw "Cleanup could not remove '$RelativePath' after $MaximumAttempts attempts. Close applications using files under '$ResolvedPath', then run Cleanup.bat again. $($_.Exception.Message)"
+                }
+
+                Start-Sleep -Milliseconds (100 * $Attempt)
+            }
+        }
+
         Write-Host "Removed $RelativePath"
     }
 }
