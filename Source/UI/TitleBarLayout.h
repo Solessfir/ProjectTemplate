@@ -27,6 +27,37 @@ enum class ETitleBarHitRegion
 	CloseButton
 };
 
+struct FWindowActionCapabilities
+{
+	bool bMinimize = true;
+	bool bMaximize = true;
+	bool bWindowMenu = true;
+
+	[[nodiscard]] constexpr bool operator==(const FWindowActionCapabilities&) const noexcept = default;
+};
+
+struct FWindowControlPolicy
+{
+	bool bShowClose = true;
+	bool bShowMinimize = true;
+	bool bShowMaximize = true;
+	bool bEnableWindowMenu = true;
+
+	[[nodiscard]] constexpr bool operator==(const FWindowControlPolicy&) const noexcept = default;
+};
+
+struct FTitleBarControlBounds
+{
+	int MinimumX = 0;
+	int MaximumX = 0;
+	bool bVisible = false;
+
+	[[nodiscard]] constexpr bool Contains(const int X) const noexcept
+	{
+		return bVisible && X >= MinimumX && X < MaximumX;
+	}
+};
+
 struct FTitleBarLayout
 {
 	int WindowWidth = 0;
@@ -36,6 +67,10 @@ struct FTitleBarLayout
 	int ResizeBorder = 6;
 	bool bResizable = true;
 	bool bMaximized = false;
+	bool bCloseVisible = true;
+	bool bMinimizeVisible = true;
+	bool bMaximizeVisible = true;
+	bool bSystemMenuEnabled = true;
 };
 
 struct FTitleBarUiCaptureRegion
@@ -83,7 +118,7 @@ struct FTitleBarHitTestState
 	return WholeValue;
 }
 
-[[nodiscard]] constexpr FTitleBarLayout MakeTitleBarLayout(const int WindowWidth, const int WindowHeight, const float ContentScale, const bool bResizable, const bool bMaximized) noexcept
+[[nodiscard]] constexpr FTitleBarLayout MakeTitleBarLayout(const int WindowWidth, const int WindowHeight, const float ContentScale, const bool bResizable, const bool bMaximized, const FWindowActionCapabilities Capabilities = {}, const FWindowControlPolicy Policy = {}) noexcept
 {
 	return {
 	    .WindowWidth = WindowWidth,
@@ -92,7 +127,64 @@ struct FTitleBarHitTestState
 	    .ButtonWidth = ScaleTitleBarMetric(46, ContentScale),
 	    .ResizeBorder = ScaleTitleBarMetric(6, ContentScale),
 	    .bResizable = bResizable,
-	    .bMaximized = bMaximized};
+	    .bMaximized = bMaximized,
+	    .bCloseVisible = Policy.bShowClose,
+	    .bMinimizeVisible = Capabilities.bMinimize && Policy.bShowMinimize,
+	    .bMaximizeVisible = Capabilities.bMaximize && Policy.bShowMaximize && bResizable,
+	    .bSystemMenuEnabled = Capabilities.bWindowMenu && Policy.bEnableWindowMenu};
+}
+
+[[nodiscard]] constexpr FTitleBarControlBounds GetTitleBarControlBounds(const FTitleBarLayout& Layout, const ETitleBarHitRegion Region) noexcept
+{
+	int MaximumX = Layout.WindowWidth;
+	if (Layout.bCloseVisible)
+	{
+		const FTitleBarControlBounds CloseBounds{MaximumX - Layout.ButtonWidth, MaximumX, true};
+		if (Region == ETitleBarHitRegion::CloseButton)
+		{
+			return CloseBounds;
+		}
+		MaximumX = CloseBounds.MinimumX;
+	}
+
+	if (Layout.bMaximizeVisible)
+	{
+		const FTitleBarControlBounds MaximizeBounds{MaximumX - Layout.ButtonWidth, MaximumX, true};
+		if (Region == ETitleBarHitRegion::MaximizeButton)
+		{
+			return MaximizeBounds;
+		}
+		MaximumX = MaximizeBounds.MinimumX;
+	}
+
+	if (Layout.bMinimizeVisible)
+	{
+		const FTitleBarControlBounds MinimizeBounds{MaximumX - Layout.ButtonWidth, MaximumX, true};
+		if (Region == ETitleBarHitRegion::MinimizeButton)
+		{
+			return MinimizeBounds;
+		}
+	}
+
+	return {};
+}
+
+[[nodiscard]] constexpr int GetTitleBarControlsMinimumX(const FTitleBarLayout& Layout) noexcept
+{
+	const FTitleBarControlBounds MinimizeBounds = GetTitleBarControlBounds(Layout, ETitleBarHitRegion::MinimizeButton);
+	if (MinimizeBounds.bVisible)
+	{
+		return MinimizeBounds.MinimumX;
+	}
+
+	const FTitleBarControlBounds MaximizeBounds = GetTitleBarControlBounds(Layout, ETitleBarHitRegion::MaximizeButton);
+	if (MaximizeBounds.bVisible)
+	{
+		return MaximizeBounds.MinimumX;
+	}
+
+	const FTitleBarControlBounds CloseBounds = GetTitleBarControlBounds(Layout, ETitleBarHitRegion::CloseButton);
+	return CloseBounds.bVisible ? CloseBounds.MinimumX : Layout.WindowWidth;
 }
 
 [[nodiscard]] constexpr ETitleBarHitRegion HitTestTitleBar(const FTitleBarLayout& Layout, const int X, const int Y) noexcept
@@ -155,27 +247,27 @@ struct FTitleBarHitTestState
 		return ETitleBarHitRegion::Client;
 	}
 
-	if (X >= Layout.WindowWidth - Layout.ButtonWidth)
+	if (GetTitleBarControlBounds(Layout, ETitleBarHitRegion::CloseButton).Contains(X))
 	{
 		return ETitleBarHitRegion::CloseButton;
 	}
 
-	if (X >= Layout.WindowWidth - Layout.ButtonWidth * 2)
+	if (GetTitleBarControlBounds(Layout, ETitleBarHitRegion::MaximizeButton).Contains(X))
 	{
 		return ETitleBarHitRegion::MaximizeButton;
 	}
 
-	if (X >= Layout.WindowWidth - Layout.ButtonWidth * 3)
+	if (GetTitleBarControlBounds(Layout, ETitleBarHitRegion::MinimizeButton).Contains(X))
 	{
 		return ETitleBarHitRegion::MinimizeButton;
 	}
 
-	if (X < Layout.TitleBarHeight)
+	if (Layout.bSystemMenuEnabled && X < Layout.TitleBarHeight)
 	{
 		return ETitleBarHitRegion::SystemMenu;
 	}
 
-	if (X < Layout.TitleBarHeight * 2)
+	if (X >= Layout.TitleBarHeight && X < Layout.TitleBarHeight * 2)
 	{
 		return ETitleBarHitRegion::ApplicationMenu;
 	}

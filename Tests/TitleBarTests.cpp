@@ -5,6 +5,8 @@
 
 using ProjectTemplate::ETitleBarHitRegion;
 using ProjectTemplate::FTitleBarHitTestState;
+using ProjectTemplate::FWindowActionCapabilities;
+using ProjectTemplate::FWindowControlPolicy;
 using ProjectTemplate::HitTestTitleBar;
 using ProjectTemplate::MakeTitleBarLayout;
 using ProjectTemplate::ResolveTitleBarUiScale;
@@ -30,6 +32,47 @@ TEST_CASE("Title bar scales its native hit regions")
 	CHECK(HitTestTitleBar(Layout, 20, 30) == ETitleBarHitRegion::SystemMenu);
 	CHECK(HitTestTitleBar(Layout, 80, 30) == ETitleBarHitRegion::ApplicationMenu);
 	CHECK(HitTestTitleBar(Layout, 120, 30) == ETitleBarHitRegion::Caption);
+}
+
+TEST_CASE("Title bar controls follow advertised window actions")
+{
+	constexpr auto WaylandLayout = MakeTitleBarLayout(1000, 700, 1.0f, true, false, {.bMinimize = false, .bMaximize = true, .bWindowMenu = false});
+	CHECK_FALSE(WaylandLayout.bMinimizeVisible);
+	CHECK(WaylandLayout.bMaximizeVisible);
+	CHECK_FALSE(WaylandLayout.bSystemMenuEnabled);
+	CHECK(HitTestTitleBar(WaylandLayout, 990, 20) == ETitleBarHitRegion::CloseButton);
+	CHECK(HitTestTitleBar(WaylandLayout, 930, 20) == ETitleBarHitRegion::MaximizeButton);
+	CHECK(HitTestTitleBar(WaylandLayout, 880, 20) == ETitleBarHitRegion::Caption);
+	CHECK(HitTestTitleBar(WaylandLayout, 20, 20) == ETitleBarHitRegion::Caption);
+	CHECK(HitTestTitleBar(WaylandLayout, 50, 20) == ETitleBarHitRegion::ApplicationMenu);
+
+	constexpr auto MinimizeOnly = MakeTitleBarLayout(1000, 700, 1.0f, true, false, {.bMinimize = true, .bMaximize = false, .bWindowMenu = false});
+	CHECK(HitTestTitleBar(MinimizeOnly, 930, 20) == ETitleBarHitRegion::MinimizeButton);
+	CHECK(HitTestTitleBar(MinimizeOnly, 880, 20) == ETitleBarHitRegion::Caption);
+
+	constexpr auto FixedSize = MakeTitleBarLayout(1000, 700, 1.0f, false, false, {.bMinimize = false, .bMaximize = true, .bWindowMenu = false});
+	CHECK_FALSE(FixedSize.bMaximizeVisible);
+	CHECK(HitTestTitleBar(FixedSize, 930, 20) == ETitleBarHitRegion::Caption);
+	CHECK(HitTestTitleBar(FixedSize, 990, 20) == ETitleBarHitRegion::CloseButton);
+}
+
+TEST_CASE("Title bar control policy defaults can hide every control")
+{
+	constexpr FWindowControlPolicy NoControls{.bShowClose = false, .bShowMinimize = false, .bShowMaximize = false, .bEnableWindowMenu = false};
+	constexpr auto Layout = MakeTitleBarLayout(1000, 700, 1.0f, true, false, FWindowActionCapabilities{}, NoControls);
+	CHECK_FALSE(Layout.bCloseVisible);
+	CHECK_FALSE(Layout.bMinimizeVisible);
+	CHECK_FALSE(Layout.bMaximizeVisible);
+	CHECK_FALSE(Layout.bSystemMenuEnabled);
+	CHECK(HitTestTitleBar(Layout, 990, 20) == ETitleBarHitRegion::Caption);
+	CHECK(HitTestTitleBar(Layout, 930, 20) == ETitleBarHitRegion::Caption);
+	CHECK(HitTestTitleBar(Layout, 20, 20) == ETitleBarHitRegion::Caption);
+	CHECK(HitTestTitleBar(Layout, 50, 20) == ETitleBarHitRegion::ApplicationMenu);
+
+	constexpr FWindowControlPolicy CloseAndMinimize{.bShowClose = true, .bShowMinimize = true, .bShowMaximize = false, .bEnableWindowMenu = false};
+	constexpr auto Selected = MakeTitleBarLayout(1000, 700, 1.0f, true, false, FWindowActionCapabilities{}, CloseAndMinimize);
+	CHECK(HitTestTitleBar(Selected, 990, 20) == ETitleBarHitRegion::CloseButton);
+	CHECK(HitTestTitleBar(Selected, 930, 20) == ETitleBarHitRegion::MinimizeButton);
 }
 
 TEST_CASE("Resize borders take priority over caption controls")

@@ -49,6 +49,8 @@ constexpr const char* BuildConfiguration = "Unknown";
 struct FWindowState
 {
 	FTitleBarHitTestState TitleBarHitTest;
+	FWindowActionCapabilities ActionCapabilities;
+	FWindowControlPolicy ControlPolicy{.bShowClose = false, .bShowMinimize = false, .bShowMaximize = false, .bEnableWindowMenu = false};
 	float UiScale = 1.0f;
 	double CursorX = 0.0;
 	double CursorY = 0.0;
@@ -290,6 +292,24 @@ void UpdateTitleBarScale(FWindowState& State, const float ContentScale)
 	State.TitleBarHitTest.Layout.ResizeBorder = ScaleTitleBarMetric(6, State.UiScale);
 }
 
+void ApplyWindowControlPolicy(FWindowState& State)
+{
+	FTitleBarLayout& Layout = State.TitleBarHitTest.Layout;
+	Layout.bCloseVisible = State.ControlPolicy.bShowClose;
+	Layout.bMinimizeVisible = State.ActionCapabilities.bMinimize && State.ControlPolicy.bShowMinimize;
+	Layout.bMaximizeVisible = State.ActionCapabilities.bMaximize && State.ControlPolicy.bShowMaximize && Layout.bResizable;
+	Layout.bSystemMenuEnabled = State.ActionCapabilities.bWindowMenu && State.ControlPolicy.bEnableWindowMenu;
+}
+
+void RefreshWindowActionCapabilities(GLFWwindow* const Window, FWindowState& State)
+{
+	State.ActionCapabilities = {
+	    .bMinimize = glfwGetWindowAttrib(Window, GLFW_MINIMIZE_SUPPORTED) == GLFW_TRUE,
+	    .bMaximize = glfwGetWindowAttrib(Window, GLFW_MAXIMIZE_SUPPORTED) == GLFW_TRUE,
+	    .bWindowMenu = glfwGetWindowAttrib(Window, GLFW_WINDOW_MENU_SUPPORTED) == GLFW_TRUE};
+	ApplyWindowControlPolicy(State);
+}
+
 void WindowSizeCallback(GLFWwindow* const Window, const int Width, const int Height)
 {
 	if (FWindowState* const State = GetWindowState(Window))
@@ -446,7 +466,7 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 	    .TrailingIntensityRatio = Theme::Background::TrailingIntensityRatio};
 }
 
-void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const float Top, const float Width, const float Height, const bool bHovered, const bool bCloseButton)
+void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const float Top, const float Width, const float Height, const bool bHovered, const bool bCloseButton, const float Rounding)
 {
 	if (!bHovered)
 	{
@@ -458,7 +478,7 @@ void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const fl
 	    {Left, Top},
 	    {Left + Width, Top + Height},
 	    Color,
-	    Theme::Rounding::TitleBarControlRounding * Height / 40.0f);
+	    Rounding * Height / 40.0f);
 }
 
 void DrawRestoreGlyph(ImDrawList& DrawList, const ImVec2 Center, const float Scale, const ImU32 Color, const float Thickness)
@@ -483,81 +503,56 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 {
 	const FTitleBarLayout& Layout = State.TitleBarHitTest.Layout;
 	ImDrawList& DrawList = *ImGui::GetBackgroundDrawList();
-	const float Width = static_cast<float>(Layout.WindowWidth);
 	const float Height = static_cast<float>(Layout.TitleBarHeight);
-	const float ButtonWidth = static_cast<float>(Layout.ButtonWidth);
 	const float Scale = Height / 40.0f;
 	const ETitleBarHitRegion HoveredRegion = GetHoveredRegion(State);
-
-	DrawSystemButtonBackground(
-	    DrawList,
-	    Width - ButtonWidth * 3.0f,
-	    0.0f,
-	    ButtonWidth,
-	    Height,
-	    HoveredRegion == ETitleBarHitRegion::MinimizeButton,
-	    false);
-
-	DrawSystemButtonBackground(
-	    DrawList,
-	    Width - ButtonWidth * 2.0f,
-	    0.0f,
-	    ButtonWidth,
-	    Height,
-	    HoveredRegion == ETitleBarHitRegion::MaximizeButton,
-	    false);
-
-	DrawSystemButtonBackground(
-	    DrawList,
-	    Width - ButtonWidth,
-	    0.0f,
-	    ButtonWidth,
-	    Height,
-	    HoveredRegion == ETitleBarHitRegion::CloseButton,
-	    true);
+	const FTitleBarControlBounds MinimizeBounds = GetTitleBarControlBounds(Layout, ETitleBarHitRegion::MinimizeButton);
+	const FTitleBarControlBounds MaximizeBounds = GetTitleBarControlBounds(Layout, ETitleBarHitRegion::MaximizeButton);
+	const FTitleBarControlBounds CloseBounds = GetTitleBarControlBounds(Layout, ETitleBarHitRegion::CloseButton);
+	if (MinimizeBounds.bVisible)
+	{
+		DrawSystemButtonBackground(DrawList, static_cast<float>(MinimizeBounds.MinimumX), 0.0f, static_cast<float>(MinimizeBounds.MaximumX - MinimizeBounds.MinimumX), Height, HoveredRegion == ETitleBarHitRegion::MinimizeButton, false, Theme::Rounding::TitleBarControlRounding);
+	}
+	if (MaximizeBounds.bVisible)
+	{
+		DrawSystemButtonBackground(DrawList, static_cast<float>(MaximizeBounds.MinimumX), 0.0f, static_cast<float>(MaximizeBounds.MaximumX - MaximizeBounds.MinimumX), Height, HoveredRegion == ETitleBarHitRegion::MaximizeButton, false, Theme::Rounding::TitleBarControlRounding);
+	}
+	if (CloseBounds.bVisible)
+	{
+		DrawSystemButtonBackground(DrawList, static_cast<float>(CloseBounds.MinimumX), 0.0f, static_cast<float>(CloseBounds.MaximumX - CloseBounds.MinimumX), Height, HoveredRegion == ETitleBarHitRegion::CloseButton, true, 0.0f);
+	}
 
 	constexpr ImU32 GlyphColor = Theme::Colors::TextPrimary;
 	const float LineThickness = std::max(1.0f, Scale);
-	const float MinimizeCenterX = Width - ButtonWidth * 2.5f;
 	const float CenterY = Height * 0.5f;
-
-	DrawList.AddLine(
-	    {MinimizeCenterX - 5.0f * Scale, CenterY + 3.0f * Scale},
-	    {MinimizeCenterX + 5.0f * Scale, CenterY + 3.0f * Scale},
-	    GlyphColor,
-	    LineThickness);
-
-	const float MaximizeCenterX = Width - ButtonWidth * 1.5f;
-	if (Layout.bMaximized)
+	if (MinimizeBounds.bVisible)
 	{
-		DrawRestoreGlyph(DrawList, {MaximizeCenterX, CenterY}, Scale, GlyphColor, LineThickness);
-	}
-	else
-	{
-		DrawList.AddRect(
-		    {MaximizeCenterX - 5.0f * Scale, CenterY - 5.0f * Scale},
-		    {MaximizeCenterX + 5.0f * Scale, CenterY + 5.0f * Scale},
-		    GlyphColor,
-		    0.0f,
-		    0,
-		    LineThickness);
+		const float CenterX = static_cast<float>(MinimizeBounds.MinimumX + MinimizeBounds.MaximumX) * 0.5f;
+		DrawList.AddLine({CenterX - 5.0f * Scale, CenterY + 3.0f * Scale}, {CenterX + 5.0f * Scale, CenterY + 3.0f * Scale}, GlyphColor, LineThickness);
 	}
 
-	const float CloseCenterX = Width - ButtonWidth * 0.5f;
-	DrawList.AddLine(
-	    {CloseCenterX - 5.0f * Scale, CenterY - 5.0f * Scale},
-	    {CloseCenterX + 5.0f * Scale, CenterY + 5.0f * Scale},
-	    GlyphColor,
-	    LineThickness);
+	if (MaximizeBounds.bVisible)
+	{
+		const float CenterX = static_cast<float>(MaximizeBounds.MinimumX + MaximizeBounds.MaximumX) * 0.5f;
+		if (Layout.bMaximized)
+		{
+			DrawRestoreGlyph(DrawList, {CenterX, CenterY}, Scale, GlyphColor, LineThickness);
+		}
+		else
+		{
+			DrawList.AddRect({CenterX - 5.0f * Scale, CenterY - 5.0f * Scale}, {CenterX + 5.0f * Scale, CenterY + 5.0f * Scale}, GlyphColor, 0.0f, 0, LineThickness);
+		}
+	}
 
-	DrawList.AddLine(
-	    {CloseCenterX + 5.0f * Scale, CenterY - 5.0f * Scale},
-	    {CloseCenterX - 5.0f * Scale, CenterY + 5.0f * Scale},
-	    GlyphColor,
-	    LineThickness);
+	if (CloseBounds.bVisible)
+	{
+		const float CenterX = static_cast<float>(CloseBounds.MinimumX + CloseBounds.MaximumX) * 0.5f;
+		DrawList.AddLine({CenterX - 5.0f * Scale, CenterY - 5.0f * Scale}, {CenterX + 5.0f * Scale, CenterY + 5.0f * Scale}, GlyphColor, LineThickness);
+		DrawList.AddLine({CenterX + 5.0f * Scale, CenterY - 5.0f * Scale}, {CenterX - 5.0f * Scale, CenterY + 5.0f * Scale}, GlyphColor, LineThickness);
+	}
 
 	const float IconCenter = Height * 0.5f;
-	if (HoveredRegion == ETitleBarHitRegion::SystemMenu)
+	if (Layout.bSystemMenuEnabled && HoveredRegion == ETitleBarHitRegion::SystemMenu)
 	{
 		DrawList.AddRectFilled(
 		    {0.0f, 0.0f},
@@ -571,7 +566,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 	ImGui::PushFont(Fonts.Medium, 0.0f);
 	const ImVec2 TextSize = ImGui::CalcTextSize(ApplicationTitle);
 
-	DrawList.PushClipRect({Height * 2.0f, 0.0f}, {Width - ButtonWidth * 3.0f, Height}, true);
+	DrawList.PushClipRect({Height * 2.0f, 0.0f}, {static_cast<float>(GetTitleBarControlsMinimumX(Layout)), Height}, true);
 	DrawList.AddText(
 	    {Height * 2.0f + 10.0f * Scale, (Height - TextSize.y) * 0.5f},
 	    State.bFocused ? Theme::Colors::TextPrimary : Theme::Colors::TextMuted,
@@ -795,12 +790,12 @@ void DrawBuildProfileCard(const FApplicationFonts& Fonts)
 	ImGui::PopStyleVar(2);
 }
 
-void DrawAppearanceCard(FUiState& State, const FApplicationFonts& Fonts)
+void DrawAppearanceCard(FWindowState& WindowState, FUiState& State, const FApplicationFonts& Fonts)
 {
 	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
 	const int ColumnCount = ImGui::GetContentRegionAvail().x >= 600.0f * InterfaceScale ? 3 : 1;
 	const int RowCount = (Theme::Background::PresetCount + ColumnCount - 1) / ColumnCount;
-	const float CardHeight = (326.0f + static_cast<float>(RowCount) * 30.0f) * InterfaceScale;
+	const float CardHeight = (420.0f + static_cast<float>(RowCount) * 30.0f) * InterfaceScale;
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Theme::Rounding::Child * InterfaceScale);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f * InterfaceScale, 16.0f * InterfaceScale});
 	ImGui::BeginChild(
@@ -835,6 +830,28 @@ void DrawAppearanceCard(FUiState& State, const FApplicationFonts& Fonts)
 		}
 		ImGui::EndCombo();
 	}
+
+	ImGui::TextUnformatted("Window controls");
+	const auto DrawWindowControlToggle = [](const char* const Label, bool& bValue, const bool bSupported)
+	{
+		ImGui::BeginDisabled(!bSupported);
+		ImGui::Checkbox(Label, &bValue);
+		ImGui::EndDisabled();
+	};
+	if (ImGui::BeginTable("WindowControls", 2, ImGuiTableFlags_SizingStretchSame))
+	{
+		ImGui::TableNextColumn();
+		DrawWindowControlToggle("Close", WindowState.ControlPolicy.bShowClose, true);
+		ImGui::TableNextColumn();
+		DrawWindowControlToggle("Minimize", WindowState.ControlPolicy.bShowMinimize, WindowState.ActionCapabilities.bMinimize);
+		ImGui::TableNextColumn();
+		DrawWindowControlToggle("Maximize / Restore", WindowState.ControlPolicy.bShowMaximize, WindowState.ActionCapabilities.bMaximize && WindowState.TitleBarHitTest.Layout.bResizable);
+		ImGui::TableNextColumn();
+		DrawWindowControlToggle("System menu", WindowState.ControlPolicy.bEnableWindowMenu, WindowState.ActionCapabilities.bWindowMenu);
+		ImGui::EndTable();
+	}
+	ImGui::TextDisabled("Unsupported native actions stay hidden.");
+	ApplyWindowControlPolicy(WindowState);
 
 	ImGui::TextUnformatted("Gradient height");
 	int GradientHeightPercent = static_cast<int>(std::lround(State.GradientHeight * 100.0f));
@@ -1052,8 +1069,9 @@ void ExecuteOutputLogCommand(const std::string_view Command, FUiState& State, FO
 	}
 }
 
-void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& Resources, FUiState& State, FOutputLogPanel& OutputLog)
+void DrawWorkspace(FWindowState& WindowState, const FApplicationResources& Resources, FUiState& State, FOutputLogPanel& OutputLog)
 {
+	const FTitleBarLayout& Layout = WindowState.TitleBarHitTest.Layout;
 	const ImGuiIO& IO = ImGui::GetIO();
 	const float TitleBarHeight = static_cast<float>(Layout.TitleBarHeight);
 	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
@@ -1123,7 +1141,7 @@ void DrawWorkspace(const FTitleBarLayout& Layout, const FApplicationResources& R
 	}
 
 	ImGui::Dummy({0.0f, 8.0f * InterfaceScale});
-	DrawAppearanceCard(State, Resources.Fonts);
+	DrawAppearanceCard(WindowState, State, Resources.Fonts);
 	ImGui::Dummy({0.0f, 4.0f * InterfaceScale});
 	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(Theme::Colors::Accent), "●");
 	ImGui::SameLine();
@@ -1184,7 +1202,7 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 	ImGui::NewFrame();
 
 	DrawTitleBar(Runtime.Window, Runtime.Resources->Fonts);
-	DrawWorkspace(Runtime.Window.TitleBarHitTest.Layout, *Runtime.Resources, Runtime.Ui, Runtime.OutputLog);
+	DrawWorkspace(Runtime.Window, *Runtime.Resources, Runtime.Ui, Runtime.OutputLog);
 	DrawApplicationMenu(Window, Runtime.Window.TitleBarHitTest.Layout, Runtime.Ui);
 	UpdateTitleBarUiCaptureRegions(Runtime.Window);
 
@@ -1308,6 +1326,7 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 	float InitialContentScale = 1.0f;
 	glfwGetWindowContentScale(Window, nullptr, &InitialContentScale);
 	UpdateTitleBarScale(WindowState, InitialContentScale);
+	RefreshWindowActionCapabilities(Window, WindowState);
 
 	glfwSetWindowUserPointer(Window, &Runtime);
 	glfwSetWindowSizeCallback(Window, WindowSizeCallback);
@@ -1389,15 +1408,18 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 	Runtime.bRendererReady = true;
 	glfwSetWindowRefreshCallback(Window, WindowRefreshCallback);
 	glfwShowWindow(Window);
+	RefreshWindowActionCapabilities(Window, WindowState);
 	int FrameCount = 0;
 	while (glfwWindowShouldClose(Window) == GLFW_FALSE)
 	{
 		if (glfwGetWindowAttrib(Window, GLFW_ICONIFIED) == GLFW_TRUE)
 		{
 			glfwWaitEvents();
+			RefreshWindowActionCapabilities(Window, WindowState);
 			continue;
 		}
 		glfwPollEvents();
+		RefreshWindowActionCapabilities(Window, WindowState);
 		RenderApplicationFrame(Window, Runtime);
 
 		FrameCount++;

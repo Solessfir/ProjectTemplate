@@ -24,7 +24,7 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - Thread-safe bounded logging with a docked, searchable UE-style Output Log
 - Stable category colorization across the whole log line, continuous text selection, verbosity filters, copy, pause, auto-scroll, command completion, and history
 - doctest unit tests
-- DPI-aware custom title bar with native move, resize, system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
+- DPI-aware capability-driven custom title bar that defaults to no window controls and can expose native system menu, minimize, maximize, Windows 11 Snap Layout, and close behavior
 - Primary-monitor-aware startup sizing at 80% of the usable work area, centered where the window system permits
 - Event-driven minimized state that suspends UI polling and rendering until the window wakes
 - Title-bar application menu for the Output Log, components, licenses, and exit
@@ -211,7 +211,9 @@ The command line shows prefix matches above the input while typing. Use Up and D
 
 The GLFW window remains decorated, but its native title bar is disabled with `GLFW_TITLEBAR`. A fast, allocation-free hit-test callback returns native caption, resize, system-menu, and window-control roles while ImGui draws the pixels.
 
-System controls are drawn with ImGui primitives because GLFW and the window system own their clicks. This preserves native behavior, including Windows 11 Snap Layout. Do not replace them with `ImGui::Button` without also returning `GLFW_HIT_TEST_CLIENT` for those rectangles.
+The template defaults to no window controls. The Start page can independently enable Close, Minimize, Maximize or Restore, and System Menu interactions in any environment. Unsupported native actions remain disabled and hidden, while the application glyph stays visible as decoration. Change `FWindowState::ControlPolicy` when a derived application needs different defaults.
+
+Enabled system controls are drawn with ImGui primitives because GLFW and the window system own their clicks. This preserves native behavior, including Windows 11 Snap Layout. A compositor or window manager may still ignore an advertised request as current policy. Do not replace the controls with `ImGui::Button` without also returning `GLFW_HIT_TEST_CLIENT` for those rectangles.
 
 The adjacent hamburger menu remains an ImGui client control. It is the starting point for application commands and currently exposes components, licenses, and exit actions.
 
