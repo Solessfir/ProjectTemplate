@@ -50,7 +50,7 @@ struct FWindowState
 {
 	FTitleBarHitTestState TitleBarHitTest;
 	FWindowActionCapabilities ActionCapabilities;
-	FWindowControlPolicy ControlPolicy{.bShowClose = false, .bShowMinimize = false, .bShowMaximize = false, .bEnableWindowMenu = false};
+	FWindowControlPolicy ControlPolicy;
 	float UiScale = 1.0f;
 	double CursorX = 0.0;
 	double CursorY = 0.0;
