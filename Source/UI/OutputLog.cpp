@@ -371,7 +371,7 @@ std::optional<std::string> FOutputLogPanel::Draw(FLogBuffer& Buffer, bool* const
 		ImGui::SetClipboardText(Clipboard.c_str());
 	}
 
-	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	const float InterfaceScale = ImGui::GetFontSize() / ImGui::GetStyle().FontSizeBase;
 	const float FooterHeight = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {8.0f * InterfaceScale, 4.0f * InterfaceScale});
 	if (ImGui::BeginChild("OutputLogEntries", {0.0f, -FooterHeight}, ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_HorizontalScrollbar))

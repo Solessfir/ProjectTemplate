@@ -674,7 +674,7 @@ void DrawApplicationMenu(GLFWwindow* const Window, const FTitleBarLayout& Layout
 
 void DrawWorkspaceIntro(FUiState& State, const FApplicationFonts& Fonts)
 {
-	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	const float InterfaceScale = ImGui::GetFontSize() / ImGui::GetStyle().FontSizeBase;
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {20.0f * InterfaceScale, 20.0f * InterfaceScale});
 	ImGui::BeginChild(
 	    "WorkspaceIntro",
@@ -713,7 +713,7 @@ void DrawWorkspaceIntro(FUiState& State, const FApplicationFonts& Fonts)
 
 void DrawProjectCard(FUiState& State, const FApplicationFonts& Fonts)
 {
-	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	const float InterfaceScale = ImGui::GetFontSize() / ImGui::GetStyle().FontSizeBase;
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Theme::Rounding::Child * InterfaceScale);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f * InterfaceScale, 16.0f * InterfaceScale});
 	ImGui::BeginChild(
@@ -743,7 +743,7 @@ void DrawProjectCard(FUiState& State, const FApplicationFonts& Fonts)
 
 void DrawBuildProfileCard(const FApplicationFonts& Fonts)
 {
-	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	const float InterfaceScale = ImGui::GetFontSize() / ImGui::GetStyle().FontSizeBase;
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Theme::Rounding::Child * InterfaceScale);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f * InterfaceScale, 16.0f * InterfaceScale});
 	ImGui::BeginChild(
@@ -792,7 +792,7 @@ void DrawBuildProfileCard(const FApplicationFonts& Fonts)
 
 void DrawAppearanceCard(FWindowState& WindowState, FUiState& State, const FApplicationFonts& Fonts)
 {
-	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	const float InterfaceScale = ImGui::GetFontSize() / ImGui::GetStyle().FontSizeBase;
 	const int ColumnCount = ImGui::GetContentRegionAvail().x >= 600.0f * InterfaceScale ? 3 : 1;
 	const int RowCount = (Theme::Background::PresetCount + ColumnCount - 1) / ColumnCount;
 	const float CardHeight = (420.0f + static_cast<float>(RowCount) * 30.0f) * InterfaceScale;
@@ -937,7 +937,7 @@ void DrawAppearanceCard(FWindowState& WindowState, FUiState& State, const FAppli
 
 void DrawLicenseModal(FUiState& State, const FApplicationResources& Resources)
 {
-	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	const float InterfaceScale = ImGui::GetFontSize() / ImGui::GetStyle().FontSizeBase;
 	if (State.bOpenLicenses)
 	{
 		ImGui::OpenPopup("Open-source licenses");
@@ -981,7 +981,7 @@ void DrawLicenseModal(FUiState& State, const FApplicationResources& Resources)
 
 void DrawWorkspaceToolbar(FUiState& State, const FApplicationFonts& Fonts, const float ToolbarHeight)
 {
-	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	const float InterfaceScale = ImGui::GetFontSize() / ImGui::GetStyle().FontSizeBase;
 	ImGui::BeginChild(
 	    "WorkspaceToolbar",
 	    {0.0f, ToolbarHeight},
@@ -1074,7 +1074,7 @@ void DrawWorkspace(FWindowState& WindowState, const FApplicationResources& Resou
 	const FTitleBarLayout& Layout = WindowState.TitleBarHitTest.Layout;
 	const ImGuiIO& IO = ImGui::GetIO();
 	const float TitleBarHeight = static_cast<float>(Layout.TitleBarHeight);
-	const float InterfaceScale = ImGui::GetFontSize() / 15.0f;
+	const float InterfaceScale = ImGui::GetFontSize() / ImGui::GetStyle().FontSizeBase;
 	const float ToolbarHeight = DefaultToolbarHeight * InterfaceScale;
 	const ImVec2 WorkspaceSize = {
 	    IO.DisplaySize.x,

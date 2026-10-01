@@ -188,7 +188,7 @@ List one forward-slash path per manifest line, relative to `Assets`. Blank lines
 
 Generated asset source is never committed. Application code accesses loose and embedded data through the same provider, and normal builds never download assets or tools.
 
-Roboto is stored under `Assets/Fonts/Roboto` with its SIL Open Font License. Shipping embeds the license text and exposes it through `View licenses`; a missing license file fails asset baking. Dear ImGui rasterizes the source TTF data through FreeType with native hinting and scales fonts through its DPI-aware font system.
+Roboto is stored under `Assets/Fonts/Roboto` with its SIL Open Font License. Shipping embeds the license text and exposes it through `View licenses`; a missing license file fails asset baking. Dear ImGui rasterizes the source TTF data through FreeType with native hinting, uses a 15.625 logical-pixel font baseline, and scales fonts through its DPI-aware font system.
 
 ## Logging and Output Log
 

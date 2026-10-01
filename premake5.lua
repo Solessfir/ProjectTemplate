@@ -197,6 +197,7 @@ project "FreeType"
         External .. "/freetype/src/cff/cff.c",
         External .. "/freetype/src/cid/type1cid.c",
         External .. "/freetype/src/gzip/ftgzip.c",
+        External .. "/freetype/src/hvf/hvf.c",
         External .. "/freetype/src/lzw/ftlzw.c",
         External .. "/freetype/src/pcf/pcf.c",
         External .. "/freetype/src/pfr/pfr.c",

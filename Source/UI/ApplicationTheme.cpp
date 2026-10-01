@@ -31,7 +31,7 @@ namespace
 
 void ApplyApplicationTheme(ImGuiStyle& Style)
 {
-	Style.FontSizeBase = 15.0f;
+	Style.FontSizeBase = 15.625f;
 	Style.WindowPadding = {12.0f, 12.0f};
 	Style.WindowRounding = Rounding::Window;
 	Style.WindowBorderSize = 1.0f;
