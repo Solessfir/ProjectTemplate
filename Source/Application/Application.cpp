@@ -483,20 +483,13 @@ void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const fl
 
 void DrawRestoreGlyph(ImDrawList& DrawList, const ImVec2 Center, const float Scale, const ImU32 Color, const float Thickness)
 {
-	const float BackLeft = Center.x - 3.0f * Scale;
-	const float BackTop = Center.y - 5.0f * Scale;
-	const float BackRight = Center.x + 5.0f * Scale;
-	const float BackBottom = Center.y + 3.0f * Scale;
-	const float FrontLeft = Center.x - 5.0f * Scale;
-	const float FrontTop = Center.y - 3.0f * Scale;
-	const float FrontRight = Center.x + 3.0f * Scale;
-	const float FrontBottom = Center.y + 5.0f * Scale;
-
-	DrawList.AddLine({BackLeft, BackTop}, {BackRight, BackTop}, Color, Thickness);
-	DrawList.AddLine({BackRight, BackTop}, {BackRight, BackBottom}, Color, Thickness);
-	DrawList.AddLine({BackLeft, BackTop}, {BackLeft, FrontTop}, Color, Thickness);
-	DrawList.AddLine({FrontRight, BackBottom}, {BackRight, BackBottom}, Color, Thickness);
-	DrawList.AddRect({FrontLeft, FrontTop}, {FrontRight, FrontBottom}, Color, 0.0f, 0, Thickness);
+	DrawList.PathLineTo({Center.x - 3.0f * Scale, Center.y - 3.0f * Scale});
+	DrawList.PathArcToFast({Center.x - 2.0f * Scale, Center.y - 4.0f * Scale}, Scale, 6, 9);
+	DrawList.PathArcToFast({Center.x + 4.0f * Scale, Center.y - 4.0f * Scale}, Scale, 9, 12);
+	DrawList.PathArcToFast({Center.x + 4.0f * Scale, Center.y + 2.0f * Scale}, Scale, 0, 3);
+	DrawList.PathLineTo({Center.x + 3.0f * Scale, Center.y + 3.0f * Scale});
+	DrawList.PathStroke(Color, 0, Thickness);
+	DrawList.AddRect({Center.x - 5.0f * Scale, Center.y - 3.0f * Scale}, {Center.x + 3.0f * Scale, Center.y + 5.0f * Scale}, Color, Scale, 0, Thickness);
 }
 
 void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
