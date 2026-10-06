@@ -379,6 +379,10 @@ project "StarterTests"
         Root .. "/Tools/AssetBaker/AssetBake.cpp",
         Root .. "/Tools/AssetBaker/AssetBake.h",
         Root .. "/Source/UI/LogTextSelection.h",
+        Root .. "/Source/UI/ApplicationTheme.cpp",
+        Root .. "/Source/UI/ApplicationTheme.h",
+        Root .. "/Source/UI/GlassPanels.cpp",
+        Root .. "/Source/UI/GlassPanels.h",
         Root .. "/Source/UI/OutputLog.h",
         Root .. "/Source/UI/TitleBarLayout.h",
         Root .. "/Tests/**.cpp"
@@ -390,8 +394,11 @@ project "StarterTests"
     }
 
     externalincludedirs {
-        External .. "/doctest"
+        External .. "/doctest",
+        External .. "/imgui"
     }
+
+    links { "ImGui", "FreeType" }
 
     filter "system:linux"
         links { "pthread" }

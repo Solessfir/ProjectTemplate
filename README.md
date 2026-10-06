@@ -20,6 +20,7 @@ The structure is inspired by [TheCherno/ProjectTemplate](https://github.com/TheC
 - Centralized Dear ImGui palette, interaction, and rounding tokens
 - Live Start-page background presets and HSV color wheel with independent height, saturation, and intensity controls, focus-aware desaturation, and a static ordered dither that prevents 8-bit gradient banding
 - Panel transparency modes for all, floating-only, docked-only, or opaque panel backgrounds
+- Herta's neutral graphite theme with adjustable panel opacity and OpenGL dual-filter Kawase backdrop blur, enabled on the Start panel by default. A shared texture pyramid downsamples and upsamples the application background using Herta's radius calibration; text remains crisp.
 - Additively brightened interaction states derived from the selected background hue, with a dedicated red close-button state
 - Thread-safe bounded logging with a docked, searchable UE-style Output Log
 - Stable category colorization across the whole log line, continuous text selection, verbosity filters, copy, pause, auto-scroll, command completion, and history
@@ -118,6 +119,8 @@ Run the application and tests:
 ```
 
 `StarterApp` resolves loose assets and saved UI state from the repository when launched directly from `Binaries`, so its working directory does not need to be the repository root.
+
+Run `StarterApp --smoke-test` for a three-frame startup check plus GPU readback checks for the checkerboard toggle, uniform colors through every Kawase pyramid depth, horizontal and vertical edges, odd-sized and one-pixel resizing, smooth transitions, and zero-radius bypass. Start's appearance controls adjust panel opacity and blur independently; enable Checkerboard background to see their effect on contrasting squares. Reset appearance restores the graphite defaults and disables the checkerboard.
 
 For backend-specific diagnostics, pass `--platform=x11` or `--platform=wayland`. Normal applications should leave platform selection to GLFW.
 

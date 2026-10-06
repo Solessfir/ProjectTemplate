@@ -6,14 +6,15 @@ namespace ProjectTemplate::Theme
 {
 namespace Colors
 {
-inline constexpr ImU32 Canvas = IM_COL32(18, 18, 19, 255);
+inline constexpr ImU32 Canvas = IM_COL32(25, 25, 25, 255);
+inline constexpr ImU32 TitleBar = IM_COL32(27, 27, 27, 255);
 inline constexpr ImU32 TitleBarControlHover = IM_COL32(255, 255, 255, 24);
-inline constexpr ImU32 Surface0 = IM_COL32(23, 23, 25, 255);
-inline constexpr ImU32 Surface1 = IM_COL32(28, 28, 30, 255);
-inline constexpr ImU32 Surface2 = IM_COL32(36, 36, 39, 255);
-inline constexpr ImU32 SurfaceHover = IM_COL32(44, 44, 47, 255);
-inline constexpr ImU32 Border = IM_COL32(52, 52, 56, 255);
-inline constexpr ImU32 BorderSoft = IM_COL32(37, 37, 40, 255);
+inline constexpr ImU32 Surface0 = IM_COL32(23, 23, 23, 255);
+inline constexpr ImU32 Surface1 = IM_COL32(28, 28, 28, 255);
+inline constexpr ImU32 Surface2 = IM_COL32(36, 36, 36, 255);
+inline constexpr ImU32 SurfaceHover = IM_COL32(44, 44, 44, 255);
+inline constexpr ImU32 Border = IM_COL32(52, 52, 52, 255);
+inline constexpr ImU32 BorderSoft = IM_COL32(37, 37, 37, 255);
 inline constexpr ImU32 TextPrimary = IM_COL32(255, 255, 255, 255);
 inline constexpr ImU32 TextSecondary = IM_COL32(190, 190, 193, 255);
 inline constexpr ImU32 TextMuted = IM_COL32(148, 148, 152, 255);
@@ -31,6 +32,7 @@ struct FPreset
 };
 
 inline constexpr FPreset Presets[] = {
+    {"Graphite", IM_COL32(184, 184, 184, 255)},
     {"Amber", IM_COL32(232, 139, 118, 255)},
     {"Rust", IM_COL32(205, 148, 30, 255)},
     {"Olive", IM_COL32(143, 179, 87, 255)},
@@ -42,14 +44,20 @@ inline constexpr FPreset Presets[] = {
     {"Plum", IM_COL32(194, 83, 177, 255)}};
 
 inline constexpr int PresetCount = sizeof(Presets) / sizeof(Presets[0]);
-inline constexpr int DefaultPreset = 6;
+inline constexpr int DefaultPreset = 0;
 inline constexpr float DefaultGradientHeight = 0.50f;
 inline constexpr float DefaultSaturation = 0.8f;
 inline constexpr float DefaultIntensity = 0.15f;
 inline constexpr float TrailingIntensityRatio = 0.40f;
-inline constexpr float UnfocusedSaturationRatio = 0.6f;
+inline constexpr float UnfocusedSaturationRatio = 0.9f;
 
 static_assert(DefaultPreset >= 0 && DefaultPreset < PresetCount);
+}
+
+namespace Glass
+{
+inline constexpr float PanelOpacity = 0.90f;
+inline constexpr float BlurRadius = 24.0f;
 }
 
 namespace Rounding
@@ -78,4 +86,5 @@ inline constexpr float StrongTint = 0.24f;
 
 void ApplyApplicationTheme(ImGuiStyle& Style);
 void ApplyInteractiveColors(ImGuiStyle& Style, ImU32 AccentColor);
+void ApplyGlassColors(ImGuiStyle& Style, float PanelOpacity);
 }

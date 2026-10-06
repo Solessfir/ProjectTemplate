@@ -14,6 +14,7 @@ struct FBackgroundGradient
 	float HeightRatio = 0.0f;
 	float Intensity = 0.0f;
 	float TrailingIntensityRatio = 0.0f;
+	float CheckerboardSize = 0.0f;
 };
 
 class FBackgroundRenderer
@@ -28,6 +29,9 @@ public:
 	[[nodiscard]] std::expected<void, std::string> Initialize();
 	void Shutdown();
 	void Render(int Width, int Height, const FBackgroundGradient& Gradient) const;
+	[[nodiscard]] std::expected<void, std::string> PrepareBlur(int Width, int Height, float PixelRadius);
+	[[nodiscard]] unsigned int GetBlurTexture() const;
+	[[nodiscard]] std::expected<void, std::string> ValidateBlur();
 
 private:
 	struct FImplementation;

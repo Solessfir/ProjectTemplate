@@ -97,11 +97,11 @@ void ApplyApplicationTheme(ImGuiStyle& Style)
 	Palette[ImGuiCol_ResizeGripActive] = ToFloatColor(Colors::Accent);
 	Palette[ImGuiCol_InputTextCursor] = ToFloatColor(Colors::Accent);
 	Palette[ImGuiCol_TabHovered] = ToFloatColor(Colors::SurfaceHover);
-	Palette[ImGuiCol_Tab] = WithAlpha(Colors::Surface0, 0.60f);
-	Palette[ImGuiCol_TabSelected] = WithAlpha(Colors::Surface2, 0.72f);
+	Palette[ImGuiCol_Tab] = WithAlpha(Colors::Surface0, 0.0f);
+	Palette[ImGuiCol_TabSelected] = WithAlpha(Colors::Surface0, 0.0f);
 	Palette[ImGuiCol_TabSelectedOverline] = ToFloatColor(Colors::Accent);
-	Palette[ImGuiCol_TabDimmed] = WithAlpha(Colors::Canvas, 0.45f);
-	Palette[ImGuiCol_TabDimmedSelected] = WithAlpha(Colors::Surface1, 0.68f);
+	Palette[ImGuiCol_TabDimmed] = WithAlpha(Colors::Surface0, 0.0f);
+	Palette[ImGuiCol_TabDimmedSelected] = WithAlpha(Colors::Surface0, 0.0f);
 	Palette[ImGuiCol_TabDimmedSelectedOverline] = ToFloatColor(Colors::Border);
 	Palette[ImGuiCol_DockingPreview] = WithAlpha(Colors::TextPrimary, 0.15f);
 	Palette[ImGuiCol_DockingEmptyBg] = WithAlpha(Colors::Canvas, 0.0f);
@@ -125,6 +125,7 @@ void ApplyApplicationTheme(ImGuiStyle& Style)
 	Palette[ImGuiCol_NavWindowingDimBg] = WithAlpha(Colors::Canvas, 0.72f);
 	Palette[ImGuiCol_ModalWindowDimBg] = WithAlpha(Colors::Canvas, 0.82f);
 	ApplyInteractiveColors(Style, Colors::Accent);
+	ApplyGlassColors(Style, Glass::PanelOpacity);
 }
 
 void ApplyInteractiveColors(ImGuiStyle& Style, const ImU32 AccentColor)
@@ -140,26 +141,47 @@ void ApplyInteractiveColors(ImGuiStyle& Style, const ImU32 AccentColor)
 	Palette[ImGuiCol_SliderGrabActive] = AdditiveTint(Colors::Border, AccentColor, Interaction::StrongTint);
 	Palette[ImGuiCol_ButtonHovered] = AdditiveTint(Colors::Surface1, AccentColor, Interaction::HoverTint);
 	Palette[ImGuiCol_ButtonActive] = AdditiveTint(Colors::Surface1, AccentColor, Interaction::ActiveTint);
-	Palette[ImGuiCol_Header] = AdditiveTint(Colors::Surface2, AccentColor, Interaction::SubtleTint);
-	Palette[ImGuiCol_HeaderHovered] = AdditiveTint(Colors::Surface1, AccentColor, Interaction::HoverTint);
-	Palette[ImGuiCol_HeaderActive] = AdditiveTint(Colors::Surface1, AccentColor, Interaction::ActiveTint);
+	Palette[ImGuiCol_Header] = WithAlpha(AccentColor, Interaction::SubtleTint);
+	Palette[ImGuiCol_HeaderHovered] = WithAlpha(AccentColor, Interaction::HoverTint);
+	Palette[ImGuiCol_HeaderActive] = WithAlpha(AccentColor, Interaction::ActiveTint);
 	Palette[ImGuiCol_SeparatorHovered] = AdditiveTint(Colors::Border, AccentColor, Interaction::ActiveTint);
 	Palette[ImGuiCol_SeparatorActive] = AdditiveTint(Colors::Border, AccentColor, Interaction::StrongTint);
 	Palette[ImGuiCol_ResizeGripHovered] = AdditiveTint(Colors::Surface1, AccentColor, Interaction::ActiveTint);
 	Palette[ImGuiCol_ResizeGripActive] = AdditiveTint(Colors::Surface1, AccentColor, Interaction::StrongTint);
 	Palette[ImGuiCol_InputTextCursor] = ToFloatColor(AccentColor);
-	Palette[ImGuiCol_TabHovered] = AdditiveTint(Colors::Surface1, AccentColor, Interaction::HoverTint);
-	Palette[ImGuiCol_TabSelected] = AdditiveTint(Colors::Surface1, AccentColor, Interaction::SubtleTint);
-	Palette[ImGuiCol_TabSelectedOverline] = ToFloatColor(AccentColor);
-	Palette[ImGuiCol_DockingPreview] = WithAlpha(AccentColor, 0.15f);
+	Palette[ImGuiCol_TabHovered] = WithAlpha(Colors::SurfaceHover, 0.35f);
+	Palette[ImGuiCol_TabSelectedOverline] = ToFloatColor(Colors::Accent);
+	Palette[ImGuiCol_DockingPreview] = WithAlpha(Colors::TextPrimary, 0.15f);
 	Palette[ImGuiCol_PlotLinesHovered] = ToFloatColor(AccentColor);
 	Palette[ImGuiCol_PlotHistogram] = ToFloatColor(AccentColor);
-	Palette[ImGuiCol_PlotHistogramHovered] = AdditiveTint(AccentColor, Colors::TextPrimary, Interaction::ActiveTint);
+	Palette[ImGuiCol_PlotHistogramHovered] = AdditiveTint(AccentColor, AccentColor, Interaction::ActiveTint);
 	Palette[ImGuiCol_TextLink] = ToFloatColor(AccentColor);
 	Palette[ImGuiCol_TextSelectedBg] = WithAlpha(AccentColor, 0.35f);
 	Palette[ImGuiCol_DragDropTarget] = ToFloatColor(AccentColor);
 	Palette[ImGuiCol_DragDropTargetBg] = WithAlpha(AccentColor, 0.15f);
 	Palette[ImGuiCol_UnsavedMarker] = ToFloatColor(AccentColor);
 	Palette[ImGuiCol_NavCursor] = ToFloatColor(AccentColor);
+}
+
+void ApplyGlassColors(ImGuiStyle& Style, const float PanelOpacity)
+{
+	const float Alpha = std::clamp(PanelOpacity, 0.0f, 1.0f);
+	ImVec4* const Palette = Style.Colors;
+	// Glass surfaces supply the backdrop and tint before ImGui draws foreground content.
+	Palette[ImGuiCol_WindowBg] = WithAlpha(Colors::Surface0, 0.0f);
+	Palette[ImGuiCol_ChildBg] = WithAlpha(Colors::Surface0, 0.0f);
+	Palette[ImGuiCol_PopupBg] = WithAlpha(Colors::Surface1, 0.0f);
+	Palette[ImGuiCol_FrameBg] = WithAlpha(Colors::Surface1, Alpha * 0.5f);
+	Palette[ImGuiCol_Button] = WithAlpha(Colors::Surface1, Alpha * 0.5f);
+	Palette[ImGuiCol_TitleBg] = WithAlpha(Colors::Surface0, 0.0f);
+	Palette[ImGuiCol_TitleBgActive] = WithAlpha(Colors::Surface0, 0.0f);
+	Palette[ImGuiCol_TitleBgCollapsed] = WithAlpha(Colors::Surface0, 0.0f);
+	Palette[ImGuiCol_MenuBarBg] = WithAlpha(Colors::Surface0, 0.0f);
+	Palette[ImGuiCol_ScrollbarBg] = WithAlpha(Colors::Surface0, 0.0f);
+	Palette[ImGuiCol_TableHeaderBg] = WithAlpha(Colors::Surface2, Alpha);
+	Palette[ImGuiCol_TableRowBgAlt] = WithAlpha(Colors::Surface2, Alpha * 0.5f);
+	Palette[ImGuiCol_TabHovered] = WithAlpha(Colors::SurfaceHover, Alpha * 0.5f);
+	Palette[ImGuiCol_Border] = WithAlpha(Colors::Border, Alpha);
+	Palette[ImGuiCol_BorderShadow] = WithAlpha(Colors::Canvas, 0.0f);
 }
 }

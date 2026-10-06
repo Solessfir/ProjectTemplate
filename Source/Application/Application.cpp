@@ -5,6 +5,7 @@
 #include "Logging/Log.h"
 #include "Rendering/BackgroundRenderer.h"
 #include "UI/ApplicationTheme.h"
+#include "UI/GlassPanels.h"
 #include "UI/OutputLog.h"
 #include "UI/TitleBarLayout.h"
 #include "UI/WorkspaceLayout.h"
@@ -81,9 +82,10 @@ struct FUiState
 	float BackgroundIntensity = Theme::Background::DefaultIntensity;
 	int BackgroundPreset = Theme::Background::DefaultPreset;
 	EPanelTransparencyMode PanelTransparencyMode = EPanelTransparencyMode::All;
-	bool bStartPanelDocked = true;
+	float PanelOpacity = Theme::Glass::PanelOpacity;
+	float BlurRadius = Theme::Glass::BlurRadius;
+	bool bCheckerboardBackground = false;
 	bool bOutputLogDocked = true;
-	bool bDemoPanelDocked = false;
 	bool bShowOutputLog = true;
 	bool bShowDemoWindow = false;
 	bool bOpenLicenses = false;
@@ -100,6 +102,7 @@ struct FApplicationRuntime
 	float PreviousContentScale = 0.0f;
 	bool bRendererReady = false;
 	bool bRenderingFrame = false;
+	bool bBlurFailed = false;
 };
 
 struct FPanelTransparencyOption
@@ -125,11 +128,6 @@ constexpr std::array PanelTransparencyOptions = {
 	}
 
 	return "Unknown";
-}
-
-void SetNextPanelTransparency(const EPanelTransparencyMode Mode, const bool bDocked)
-{
-	ImGui::SetNextWindowBgAlpha(IsPanelTransparent(Mode, bDocked) ? 0.0f : 1.0f);
 }
 
 void EnsureDefaultDockLayout(const ImGuiID DockspaceId, const ImVec2 DockspaceSize)
@@ -452,7 +450,7 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 	return ApplySaturation(ImGui::ColorConvertFloat4ToU32(State.BackgroundColor), State.BackgroundSaturation);
 }
 
-[[nodiscard]] FBackgroundGradient ResolveApplicationBackground(const FUiState& State, const bool bFocused)
+[[nodiscard]] FBackgroundGradient ResolveApplicationBackground(const FUiState& State, const bool bFocused, const float InterfaceScale)
 {
 	const float FocusSaturation = bFocused ? State.BackgroundSaturation : State.BackgroundSaturation * Theme::Background::UnfocusedSaturationRatio;
 	const ImU32 GradientColor = ApplySaturation(ImGui::ColorConvertFloat4ToU32(State.BackgroundColor), FocusSaturation);
@@ -463,7 +461,8 @@ int TitleBarHitTestCallback(GLFWwindow* const Window, const int X, const int Y)
 	    .AccentBlue = Accent.z,
 	    .HeightRatio = State.GradientHeight,
 	    .Intensity = State.BackgroundIntensity,
-	    .TrailingIntensityRatio = Theme::Background::TrailingIntensityRatio};
+	    .TrailingIntensityRatio = Theme::Background::TrailingIntensityRatio,
+	    .CheckerboardSize = State.bCheckerboardBackground ? 32.0f * InterfaceScale : 0.0f};
 }
 
 void DrawSystemButtonBackground(ImDrawList& DrawList, const float Left, const float Top, const float Width, const float Height, const bool bHovered, const bool bCloseButton, const float Rounding)
@@ -499,6 +498,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 	const float Height = static_cast<float>(Layout.TitleBarHeight);
 	const float Scale = Height / 40.0f;
 	const ETitleBarHitRegion HoveredRegion = GetHoveredRegion(State);
+	DrawList.AddRectFilled({0.0f, 0.0f}, {static_cast<float>(Layout.WindowWidth), Height}, Theme::Colors::TitleBar);
 	const FTitleBarControlBounds MinimizeBounds = GetTitleBarControlBounds(Layout, ETitleBarHitRegion::MinimizeButton);
 	const FTitleBarControlBounds MaximizeBounds = GetTitleBarControlBounds(Layout, ETitleBarHitRegion::MaximizeButton);
 	const FTitleBarControlBounds CloseBounds = GetTitleBarControlBounds(Layout, ETitleBarHitRegion::CloseButton);
@@ -788,7 +788,7 @@ void DrawAppearanceCard(FWindowState& WindowState, FUiState& State, const FAppli
 	const float InterfaceScale = ImGui::GetFontSize() / ImGui::GetStyle().FontSizeBase;
 	const int ColumnCount = ImGui::GetContentRegionAvail().x >= 600.0f * InterfaceScale ? 3 : 1;
 	const int RowCount = (Theme::Background::PresetCount + ColumnCount - 1) / ColumnCount;
-	const float CardHeight = (420.0f + static_cast<float>(RowCount) * 30.0f) * InterfaceScale;
+	const float CardHeight = (560.0f + static_cast<float>(RowCount) * 30.0f) * InterfaceScale;
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Theme::Rounding::Child * InterfaceScale);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f * InterfaceScale, 16.0f * InterfaceScale});
 	ImGui::BeginChild(
@@ -822,6 +822,26 @@ void DrawAppearanceCard(FWindowState& WindowState, FUiState& State, const FAppli
 			}
 		}
 		ImGui::EndCombo();
+	}
+
+	ImGui::TextUnformatted("Panel opacity");
+	ImGui::SetNextItemWidth(-1.0f);
+	ImGui::SliderFloat("##PanelOpacity", &State.PanelOpacity, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+	ImGui::TextUnformatted("Backdrop blur");
+	ImGui::SetNextItemWidth(-1.0f);
+	ImGui::SliderFloat("##BlurRadius", &State.BlurRadius, 0.0f, 40.0f, "%.0f px", ImGuiSliderFlags_AlwaysClamp);
+	ImGui::Checkbox("Checkerboard background", &State.bCheckerboardBackground);
+	if (ImGui::Button("Reset appearance"))
+	{
+		State.BackgroundPreset = Theme::Background::DefaultPreset;
+		State.BackgroundColor = ImGui::ColorConvertU32ToFloat4(Theme::Background::Presets[State.BackgroundPreset].Color);
+		State.GradientHeight = Theme::Background::DefaultGradientHeight;
+		State.BackgroundSaturation = Theme::Background::DefaultSaturation;
+		State.BackgroundIntensity = Theme::Background::DefaultIntensity;
+		State.PanelTransparencyMode = EPanelTransparencyMode::All;
+		State.PanelOpacity = Theme::Glass::PanelOpacity;
+		State.BlurRadius = Theme::Glass::BlurRadius;
+		State.bCheckerboardBackground = false;
 	}
 
 	ImGui::TextUnformatted("Window controls");
@@ -1095,7 +1115,7 @@ void DrawWorkspace(FWindowState& WindowState, const FApplicationResources& Resou
 	const ImGuiID MainDockspaceId = ImGui::GetID(MainDockspaceName);
 	EnsureDefaultDockLayout(MainDockspaceId, {WorkspaceSize.x, DockspaceHeight});
 	ImVec4 DockspaceBackground = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
-	DockspaceBackground.w = IsPanelTransparent(State.PanelTransparencyMode, true) ? 0.0f : 1.0f;
+	DockspaceBackground.w = 0.0f;
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, DockspaceBackground);
 	ImGui::DockSpace(
 	    MainDockspaceId,
@@ -1112,9 +1132,7 @@ void DrawWorkspace(FWindowState& WindowState, const FApplicationResources& Resou
 	    {WorkspaceSize.x * 0.5f, TitleBarHeight + ToolbarHeight + DockspaceHeight * 0.5f},
 	    ImGuiCond_FirstUseEver,
 	    {0.5f, 0.5f});
-	SetNextPanelTransparency(State.PanelTransparencyMode, State.bStartPanelDocked);
 	ImGui::Begin("Start");
-	State.bStartPanelDocked = ImGui::IsWindowDocked();
 	DrawWorkspaceIntro(State, Resources.Fonts);
 
 	if (ImGui::GetContentRegionAvail().x >= 720.0f * InterfaceScale &&
@@ -1145,7 +1163,6 @@ void DrawWorkspace(FWindowState& WindowState, const FApplicationResources& Resou
 
 	if (State.bShowOutputLog)
 	{
-		SetNextPanelTransparency(State.PanelTransparencyMode, State.bOutputLogDocked);
 		const std::optional<std::string> Command = OutputLog.Draw(Log::GetBuffer(), &State.bShowOutputLog, State.bOutputLogDocked, OutputLogCommands);
 		if (Command)
 		{
@@ -1155,13 +1172,7 @@ void DrawWorkspace(FWindowState& WindowState, const FApplicationResources& Resou
 
 	if (State.bShowDemoWindow)
 	{
-		SetNextPanelTransparency(State.PanelTransparencyMode, State.bDemoPanelDocked);
 		ImGui::ShowDemoWindow(&State.bShowDemoWindow);
-		// The demo owns its Begin/End pair, so its dock state is only available through the pinned ImGui internals.
-		if (const ImGuiWindow* DemoWindow = ImGui::FindWindowByName("Dear ImGui Demo"))
-		{
-			State.bDemoPanelDocked = DemoWindow->DockIsActive;
-		}
 	}
 	DrawLicenseModal(State, Resources);
 }
@@ -1189,6 +1200,7 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 		Runtime.PreviousContentScale = ContentScale;
 	}
 	Theme::ApplyInteractiveColors(ImGui::GetStyle(), ResolveBackgroundAccent(Runtime.Ui));
+	Theme::ApplyGlassColors(ImGui::GetStyle(), Runtime.Ui.PanelOpacity);
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -1199,17 +1211,30 @@ void RenderApplicationFrame(GLFWwindow* const Window, FApplicationRuntime& Runti
 	DrawApplicationMenu(Window, Runtime.Window.TitleBarHitTest.Layout, Runtime.Ui);
 	UpdateTitleBarUiCaptureRegions(Runtime.Window);
 
-	ImGui::Render();
 	int FramebufferWidth = 0;
 	int FramebufferHeight = 0;
 	glfwGetFramebufferSize(Window, &FramebufferWidth, &FramebufferHeight);
 	glViewport(0, 0, FramebufferWidth, FramebufferHeight);
-	glClearColor(18.0f / 255.0f, 18.0f / 255.0f, 19.0f / 255.0f, 1.0f);
+	const ImVec4 Canvas = ImGui::ColorConvertU32ToFloat4(Theme::Colors::Canvas);
+	glClearColor(Canvas.x, Canvas.y, Canvas.z, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	Runtime.BackgroundRenderer.Render(
 	    FramebufferWidth,
 	    FramebufferHeight,
-	    ResolveApplicationBackground(Runtime.Ui, Runtime.Window.bFocused));
+	    ResolveApplicationBackground(Runtime.Ui, Runtime.Window.bFocused, ContentScale));
+	if (!Runtime.bBlurFailed && Runtime.Ui.BlurRadius > 0.0f)
+	{
+		const std::expected<void, std::string> Blur = Runtime.BackgroundRenderer.PrepareBlur(FramebufferWidth, FramebufferHeight, Runtime.Ui.BlurRadius * ContentScale);
+		if (!Blur)
+		{
+			Log::Error("Renderer", "Backdrop blur unavailable: {}", Blur.error());
+			Runtime.bBlurFailed = true;
+		}
+	}
+	const unsigned int BlurTexture = !Runtime.bBlurFailed && Runtime.Ui.BlurRadius > 0.0f ? Runtime.BackgroundRenderer.GetBlurTexture() : 0;
+	ImGui::EndFrame();
+	DrawGlassPanels(Runtime.Ui.PanelTransparencyMode, Runtime.Ui.PanelOpacity, BlurTexture);
+	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(Window);
 	Runtime.bRenderingFrame = false;
@@ -1400,6 +1425,23 @@ int RunApplication(const std::filesystem::path& ExecutablePath, const bool bSmok
 	Log::Info("Application", "Workspace ready. Type help in the Output Log for commands");
 	Runtime.bRendererReady = true;
 	glfwSetWindowRefreshCallback(Window, WindowRefreshCallback);
+	if (bSmokeTest)
+	{
+		const std::expected<void, std::string> BlurValidation = Runtime.BackgroundRenderer.ValidateBlur();
+		if (!BlurValidation)
+		{
+			Log::Error("Renderer", "Backdrop blur validation failed: {}", BlurValidation.error());
+			Runtime.bRendererReady = false;
+			Runtime.BackgroundRenderer.Shutdown();
+			ImGui_ImplOpenGL3_Shutdown();
+			ImGui_ImplGlfw_Shutdown();
+			ImGui::DestroyContext();
+			glfwDestroyWindow(Window);
+			glfwTerminate();
+			return 1;
+		}
+		Log::Info("Renderer", "Backdrop blur readback checks passed");
+	}
 	glfwShowWindow(Window);
 	RefreshWindowActionCapabilities(Window, WindowState);
 	int FrameCount = 0;
