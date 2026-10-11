@@ -521,7 +521,7 @@ void DrawTitleBar(const FWindowState& State, const FApplicationFonts& Fonts)
 	if (MinimizeBounds.bVisible)
 	{
 		const float CenterX = static_cast<float>(MinimizeBounds.MinimumX + MinimizeBounds.MaximumX) * 0.5f;
-		DrawList.AddLine({CenterX - 5.0f * Scale, CenterY + 3.0f * Scale}, {CenterX + 5.0f * Scale, CenterY + 3.0f * Scale}, GlyphColor, LineThickness);
+		DrawList.AddLine({CenterX - 5.0f * Scale, CenterY}, {CenterX + 5.0f * Scale, CenterY}, GlyphColor, LineThickness);
 	}
 
 	if (MaximizeBounds.bVisible)
